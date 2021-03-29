@@ -1,0 +1,7 @@
+pandas
+sklearn
+matplotlib
+nltk
+stanza
+wordcloud
+pillow
