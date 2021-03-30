@@ -5,7 +5,7 @@ from data.verbs import *
 from utils import *
 import argparse
 
-MLM_MODELS=["bert-base-uncased","distilbert-base-uncased"]
+MLM_MODELS=["bert-base-cased","distilbert-base-uncased"]
 
 def parse_arguments():
     argparser = argparse.ArgumentParser("to parse causal documents")
@@ -42,7 +42,6 @@ def calc_rel_prob(cause, effect, triggers,tokenizer,model):
             text = f'{cause} {trigger} {effect_chunk} [MASK]'
             prob_effect=prob_expected_word(text, effect_tokens[i], tokenizer, model)
             probabilities.append(prob_effect)
-            #print(f"{text}:{prob_effect}")
     avg_prob = float(sum(probabilities)) / float(len(probabilities))
     return avg_prob
 
@@ -63,31 +62,21 @@ names_triggers={
     "DOES_NOT_INHIBT":all_does_not_inhibits_verbs
 }
 
-def calc_average_probabilities(input_file_name):
+def calc_average_probabilities_across_models(overall_prob_averages_across_models, output_file_overall):
+    for k,v in overall_prob_averages_across_models.items():
+        avg_prob_across_models = float(sum(v)) / float(len(v))
+        output = f"{k}\t{avg_prob_across_models}\n"
+        append_to_file(output, output_file_overall)
+
+
+def calc_average_probabilities(input_file_name,model,tokenizer,overall_prob_averages_across_models):
     data=read_data(input_file_name)
-
-    # output file for overall across models average
-    output_file_overall = f"outputs/overall_probabilities.tsv"
-    initalize_file(output_file_overall)
-
     # for each type of trigger verb
     for trigger_group_name,triggers in names_triggers.items():
-
-
         # for each line in the input tsv file
         for id_cause, cause_synonyms in data.items():
             for id_effect, effect_synonyms in data.items():
                 if not (id_cause == id_effect):
-                    trigger_prob_avg_across_models = []
-                    for each_model in MLM_MODELS:
-                        # output file for per model average
-                        output_file_model = f"outputs/{each_model}_probabilities.tsv"
-                        # empty out the output file if it exists from previous runs
-                        #initalize_file(output_file_model)
-
-                        tokenizer = AutoTokenizer.from_pretrained(each_model)
-                        model = AutoModelForMaskedLM.from_pretrained(each_model)
-
                         # probabilities for each element in cartesian product
                         probabilities = []
                         for cause in cause_synonyms:
@@ -98,12 +87,30 @@ def calc_average_probabilities(input_file_name):
                         avg_prob = float(sum(probabilities)) / float(len(probabilities))
                         output=f"{id_cause}\t{id_effect}\t{trigger_group_name}\t{avg_prob}\n"
                         append_to_file(output,output_file_model)
-                        trigger_prob_avg_across_models.append(avg_prob)
-                    avg_prob_across_models = float(sum(trigger_prob_avg_across_models)) / float(len(trigger_prob_avg_across_models))
-                    output = f"{id_cause}\t{id_effect}\t{trigger_group_name}\t{avg_prob_across_models}\n"
-                    append_to_file(output, output_file_overall)
+                        unique_id_datapoint=f"{id_cause}\t{id_effect}\t{trigger_group_name}"
+                        if(overall_prob_averages_across_models.get(unique_id_datapoint,0)==0):
+                            all_model_averages=[]
+                            all_model_averages.append(avg_prob)
+                            overall_prob_averages_across_models[unique_id_datapoint] = all_model_averages
+                        else:
+                            current_value=overall_prob_averages_across_models[unique_id_datapoint]
+                            assert type(current_value) is list
+                            current_value.append(avg_prob)
+                            overall_prob_averages_across_models[unique_id_datapoint]=current_value
 
 if __name__ == "__main__":
+    overall_prob_averages_across_models={}
+    for each_model in MLM_MODELS:
+        # output file for per model average
+        output_file_model = f"outputs/{each_model}_probabilities.tsv"
+        # empty out the output file if it exists from previous runs
+        initalize_file(output_file_model)
+        tokenizer = AutoTokenizer.from_pretrained(each_model)
+        model = AutoModelForMaskedLM.from_pretrained(each_model)
         input_file=parse_arguments()
-        calc_average_probabilities(input_file)
+        calc_average_probabilities(input_file,model,tokenizer,overall_prob_averages_across_models)
+    # output file for overall across models average
+    output_file_overall = f"outputs/overall_probabilities.tsv"
+    initalize_file(output_file_overall)
+    calc_average_probabilities_across_models(overall_prob_averages_across_models, output_file_overall)
 

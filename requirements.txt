@@ -1,7 +1,2 @@
-pandas
-sklearn
-matplotlib
-nltk
-stanza
-wordcloud
+transformers
 pillow
