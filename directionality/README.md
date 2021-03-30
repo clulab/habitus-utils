@@ -66,7 +66,7 @@ all_promote_verbs = ["improves", "accelerates", "boosts", "compounds", "enhances
 ### Masked language models
 
 - list of masked language models that you want to be averaged across should be mentioned in MLM_MODELS in `./calc_relation_probabilities.py`
-- You can add the name of any models given in the [list of models](https://huggingface.co/models)produ. 
+- You can add the name of any models given in the [list of models](https://huggingface.co/models) by huggingface co. 
 
     e.g.,:
 `MLM_MODELS=["bert-base-uncased","distilbert-base-uncased","bert-large-uncased","bert-base-cased"]`
