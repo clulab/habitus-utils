@@ -41,7 +41,7 @@ There are the expected inputs for this application.
 - masked language model
 
 
-#####Causal and effect variables:
+##### Causal and effect variables:
  
  - Input variables are to be provided in the file `data/inputs.tsv`
  - Each group of synonyms of variables must be provided in a newline and should be separated by a tab
@@ -53,7 +53,7 @@ e.g.,
 ```
 
 
-#####Trigger verbs
+##### Trigger verbs
 
 - Trigger verbs should be provided in the file data/verbs.py as a comma separated list.
 
@@ -63,7 +63,7 @@ all_promote_verbs = ["improves", "accelerates", "boosts", "compounds", "enhances
                            "increases", "facilitates", "spikes"]
 ```
 
-###Masked language models
+### Masked language models
 
 - list of masked language models that you want to be averaged across should be mentioned in MLM_MODELS in `./calc_relation_probabilities.py`
 - You can add the name of any models given in the [list of models](https://huggingface.co/models)produ. 
