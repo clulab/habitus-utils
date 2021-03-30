@@ -1,3 +1,3 @@
 # habitus-utils
 
-Please refer README under individual projects
+Please refer to the README files under the individual projects.
