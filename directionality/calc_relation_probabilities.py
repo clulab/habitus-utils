@@ -34,6 +34,15 @@ def prob_expected_word(text_with_mask, expected_word, tokenizer, model):
     return prob
 
 def calc_rel_prob(cause, effect, triggers,tokenizer,model):
+    """
+    calc_rel_prob calculates the probability of the effect token to occur at the end of a sentence created as
+    'cause triggers [MASK]' using the masked language 'model'
+
+    :param cause: cause token in a sentence. e.g., 'education'
+    :param effect: list of effect tokens separated by space. e.g., [income, income level]
+    :param triggers: list of trigger tokens separated by space. e.g., [improves, promotes]
+    :return: average probability (float) across given all effects and all triggers
+    """
     probabilities = []
     effect_tokens = effect.split(' ')
     for trigger in triggers:
@@ -69,13 +78,12 @@ def calc_average_probabilities_across_models(overall_prob_averages_across_models
         append_to_file(output, output_file_overall)
 
 
-def calc_average_probabilities(input_file_name,model,tokenizer,overall_prob_averages_across_models):
-    data=read_data(input_file_name)
+def calc_average_probabilities(causes,all_triggers,effects,model,tokenizer,overall_prob_averages_across_models):
     # for each type of trigger verb
-    for trigger_group_name,triggers in names_triggers.items():
+    for trigger_group_name,triggers in all_triggers:
         # for each line in the input tsv file
-        for id_cause, cause_synonyms in data.items():
-            for id_effect, effect_synonyms in data.items():
+        for id_cause, cause_synonyms in causes:
+            for id_effect, effect_synonyms in effects:
                 if not (id_cause == id_effect):
                         # probabilities for each element in cartesian product
                         probabilities = []
@@ -108,7 +116,8 @@ if __name__ == "__main__":
         tokenizer = AutoTokenizer.from_pretrained(each_model)
         model = AutoModelForMaskedLM.from_pretrained(each_model)
         input_file=parse_arguments()
-        calc_average_probabilities(input_file,model,tokenizer,overall_prob_averages_across_models)
+        data = read_data(input_file)
+        calc_average_probabilities(causes=data.items(),all_triggers=names_triggers.items(),effects=data.items(), model=model, tokenizer=tokenizer,overall_prob_averages_across_models=overall_prob_averages_across_models)
     # output file for overall across models average
     output_file_overall = f"outputs/overall_probabilities.tsv"
     initalize_file(output_file_overall)
