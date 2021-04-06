@@ -7,9 +7,9 @@ class DirectionalProbabilities:
         self.causes = causes
         self.effects = effects
         self.triggers = triggers
-        self.models=models
+        self.models = models
 
-    def calc_list_avg(list_averages):
+    def calc_list_avg(self,list_averages):
         return float(sum(list_averages)) / float(len(list_averages))
 
     def get_prob_across_models(self):
@@ -42,6 +42,7 @@ def parse_arguments():
         rep_underscore_space(args.triggers)
         rep_underscore_space(args.models)
         return args
+
 if __name__ == "__main__":
     args = parse_arguments()
     average_calculator=DirectionalProbabilities(args.causes, args.effects, args.triggers, args.models)
