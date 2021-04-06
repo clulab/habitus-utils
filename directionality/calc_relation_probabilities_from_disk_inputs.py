@@ -71,11 +71,13 @@ names_triggers={
     "DOES_NOT_INHIBT":all_does_not_inhibits_verbs
 }
 
-def calc_average_probabilities_across_models(overall_prob_averages_across_models, output_file_overall):
+def calc_average_probabilities_across_models_write_disk(overall_prob_averages_across_models, output_file_overall):
     for k,v in overall_prob_averages_across_models.items():
         avg_prob_across_models = float(sum(v)) / float(len(v))
         output = f"{k}\t{avg_prob_across_models}\n"
         append_to_file(output, output_file_overall)
+
+
 
 def calc_average_probabilities_across_synonyms(cause_synonyms,effect_synonyms,triggers,model,tokenizer):
     """
@@ -98,6 +100,16 @@ def calc_average_probabilities_across_synonyms(cause_synonyms,effect_synonyms,tr
     avg_prob = float(sum(probabilities)) / float(len(probabilities))
     return avg_prob
 
+def fill_dict(overall_prob_averages_across_models,unique_id_datapoint,avg_prob):
+    if (overall_prob_averages_across_models.get(unique_id_datapoint, 0) == 0):
+        all_model_averages = []
+        all_model_averages.append(avg_prob)
+        overall_prob_averages_across_models[unique_id_datapoint] = all_model_averages
+    else:
+        current_value = overall_prob_averages_across_models[unique_id_datapoint]
+        assert type(current_value) is list
+        current_value.append(avg_prob)
+        overall_prob_averages_across_models[unique_id_datapoint] = current_value
 
 def calc_average_probabilities(all_causes, all_triggers, all_effects, model, tokenizer, overall_prob_averages_across_models):
     """
@@ -125,15 +137,8 @@ def calc_average_probabilities(all_causes, all_triggers, all_effects, model, tok
 
                         #for calculating average probability across across language models store avg_prob in a dict:overall_prob_averages_across_models
                         unique_id_datapoint = f"{id_cause}\t{id_effect}\t{trigger_group_name}"
-                        if(overall_prob_averages_across_models.get(unique_id_datapoint,0)==0):
-                            all_model_averages=[]
-                            all_model_averages.append(avg_prob)
-                            overall_prob_averages_across_models[unique_id_datapoint] = all_model_averages
-                        else:
-                            current_value=overall_prob_averages_across_models[unique_id_datapoint]
-                            assert type(current_value) is list
-                            current_value.append(avg_prob)
-                            overall_prob_averages_across_models[unique_id_datapoint]=current_value
+                        fill_dict(overall_prob_averages_across_models, unique_id_datapoint, avg_prob)
+
 
 if __name__ == "__main__":
     overall_prob_averages_across_models={}
@@ -150,5 +155,5 @@ if __name__ == "__main__":
     # output file for overall across models average
     output_file_overall = f"outputs/overall_probabilities.tsv"
     initalize_file(output_file_overall)
-    calc_average_probabilities_across_models(overall_prob_averages_across_models, output_file_overall)
+    calc_average_probabilities_across_models_write_disk(overall_prob_averages_across_models, output_file_overall)
 
