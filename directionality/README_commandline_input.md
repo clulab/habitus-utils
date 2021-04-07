@@ -56,13 +56,16 @@ e.g.,
 
 ##### Trigger verbs
 
-- Trigger verbs should be provided in the file data/verbs.py as a comma separated list.
+- Trigger verbs should be provided as the command line argument `--triggers`.
 
 e.g.,
 ```
-all_promote_verbs = ["improves", "accelerates", "boosts", "compounds", "enhances", "escalates",
-                           "increases", "facilitates", "spikes"]
+--triggers improves accelerates 
+
 ```
+
+Note: trigger verbs are optional. If not trigger verbs are provided, code will default to the `all_promote_verbs`  in 
+`data/verbs.py`
 
 ### Masked language models
 

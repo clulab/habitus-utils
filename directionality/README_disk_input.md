@@ -71,6 +71,7 @@ all_promote_verbs = ["improves", "accelerates", "boosts", "compounds", "enhances
     e.g.,:
 `MLM_MODELS=["bert-base-uncased","distilbert-base-uncased","bert-large-uncased","bert-base-cased"]`
 
+Note: if no models are specified `distilbert-base-uncased` will be used by default.
 
 
 ### Outputs
