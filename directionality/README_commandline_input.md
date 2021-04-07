@@ -34,18 +34,24 @@ python calc_relation_probabilities_from_commandline_args.py --causes education e
 
 ### Details of Inputs
 
-There are the expected inputs for this application. 
 
-- causal variables
-- effect variables
-- trigger verbs
+Consider you want to model the probability of yield to occur at the end of the sentence: weather improves yield .
+
+Then these are the expected inputs for this application:
+
+- causal variables (e.g.,weather)
+- effect variables (e.g.,yield)
+- trigger verbs (e.g.,improves)
 - masked language model
 
 
 ##### Causal and effect variables:
  
  - should be provided after the command line arguments of `--causes` and `--effects` respectively.
+ 
+ e.g.,`--causes education education_standard`
  - each cause variable must be separated from another using a space e.g., `education weather`
+ 
  - if a causal variable is multi token, use underscore `_` to separate them e.g.,`education_level`
 
 
@@ -60,7 +66,7 @@ e.g.,
 
 ```
 
-Note: trigger verbs are optional. If not trigger verbs are provided, code will default to the `all_promote_verbs`  in 
+Note: trigger verbs are optional. If no trigger verbs are provided, code will default to the `all_promote_verbs`  in 
 `data/verbs.py`
 
 ### Masked language models
