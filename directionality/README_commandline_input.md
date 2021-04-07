@@ -35,14 +35,14 @@ python calc_relation_probabilities_from_commandline_args.py --causes education e
 ### Details of Inputs
 
 
-Consider you want to model the probability of yield to occur at the end of the sentence: weather improves yield .
+Consider you want to model the probability of yield to occur at the end of the sentence: `weather improves yield` .
 
 Then these are the expected inputs for this application:
 
 - causal variables (e.g.,weather)
 - effect variables (e.g.,yield)
 - trigger verbs (e.g.,improves)
-- masked language model
+- masked language models (list of [Masked Language Models](https://keras.io/examples/nlp/masked_language_modeling/)) you want your prediction probabilities to be averaged across.)
 
 
 ##### Causal and effect variables:
@@ -75,24 +75,26 @@ Note: trigger verbs are optional. If no trigger verbs are provided, code will de
 - This should be provided after the command line argument of `--models` and must be separated by space 
 e.g.,`--models bert-base-cased distilbert-base-uncased`
 - You can add the name of any models given in the [list of models](https://huggingface.co/models) by huggingface co. 
-- if no model is provided by default `distilbert-base-uncased` will be used.
+- Masked models are optional. If no model is provided by default `distilbert-base-uncased` will be used.
 
 
 
 ### Outputs
 
-- The code will output the probability in both direction. For example for the causal and effect variable example given above (weather promotes yield), the output will be 
-        - probability of yield to occur at the end of weather promotes ________.
-        - probability of weather to occur at the end of yield promotes ________.    
+- The code will output the probability in both directions. For example for the causal and effect variable example given above (weather promotes yield), the output will be 
+    - probability of yield to occur at the end of weather promotes ________.
+    - probability of weather to occur at the end of yield promotes ________.    
 - Output for command line based code will be printed in command line itself.
 
 
     
 e.g.,: 
-`
+```
 average probabilities from causes to effect=0.0006510953470650647
+
 average probabilities from effects to causes=0.002261902516086896
-`
+```
+
 
 
 
