@@ -32,31 +32,33 @@ python calc_relation_probabilities_from_commandline_args.py --causes education e
 ```
 
 
-### Inputs
+### Details of Inputs
 
-There are the expected inputs for this application. 
 
-- causal variables
-- effect variables
-- trigger verbs
-- masked language model
+Consider you want to model the probability of yield to occur at the end of the sentence: `weather improves yield` .
+
+Then these are the expected inputs for this application:
+
+- causal variables (e.g.,weather)
+- effect variables (e.g.,yield)
+- trigger verbs (e.g.,improves)
+- masked language models (list of [Masked Language Models](https://keras.io/examples/nlp/masked_language_modeling/)) you want your prediction probabilities to be averaged across.)
 
 
 ##### Causal and effect variables:
  
- - Input variables are to be provided in the file `data/inputs.tsv`
- - Each group of synonyms of variables must be provided in a newline and should be separated by a tab
+ - should be provided after the command line arguments of `--causes` and `--effects` respectively.
+ 
+ e.g.,`--causes education education_standard`
+ - each causal/effect variable must be separated from another using a space e.g., `education weather`
+ 
+ - if a causal/effect variable is multi token, use underscore `_` to separate them e.g.,`education_level`
 
-e.g.,
-```
-1	education	education standard
-2	income	income level
-```
 
 
 ##### Trigger verbs
 
-- Trigger verbs should be provided as the command line argument `--triggers`.
+- Trigger verbs should be provided after the command line argument `--triggers`.
 
 e.g.,
 ```
@@ -64,46 +66,38 @@ e.g.,
 
 ```
 
-Note: trigger verbs are optional. If not trigger verbs are provided, code will default to the `all_promote_verbs`  in 
+Note: trigger verbs are optional. If no trigger verbs are provided, code will default to the `all_promote_verbs`  in 
 `data/verbs.py`
 
 ### Masked language models
 
-- list of masked language models that you want to be averaged across should be mentioned in MLM_MODELS in `./calc_relation_probabilities.py`
+- list of masked language models that you want your prediction be averaged across.
+- This should be provided after the command line argument of `--models` and must be separated by space 
+e.g.,`--models bert-base-cased distilbert-base-uncased`
 - You can add the name of any models given in the [list of models](https://huggingface.co/models) by huggingface co. 
-
-    e.g.,:
-`MLM_MODELS=["bert-base-uncased","distilbert-base-uncased","bert-large-uncased","bert-base-cased"]`
+- Masked models are optional. If no model is provided by default `distilbert-base-uncased` will be used.
 
 
 
 ### Outputs
 
+- The code will output the probability in both directions. For example for the causal and effect variable example given above (weather promotes yield), the output will be 
+    - probability of yield to occur at the end of weather promotes ________.
+    - probability of weather to occur at the end of yield promotes ________.    
+- Output for command line based code will be printed in command line itself.
 
-
-
-- There are two types of output files
-    - probabilities per model: `outputs/model_name_probabilities.tsv`
-    - probabilities across models: `outputs/overall_probabilities.tsv`
-
-
-- Each line in the output file will be the average probabilities across cartesian products of 
-    - each synonym of input,
-    - each line of input,
-    - each trigger verb,
-    - each model
 
     
 e.g.,: 
-`
-1	2	PROMOTES	0.0003255476736507231
-`
+```
+average probabilities from causes to effect=0.0006510953470650647
 
-means the average probability of the sentence created by input variable 2 (all income related synonyms) to occur 
-at the end of input variable 1 (all education related synonyms) across all PROMOTE VERBS
+average probabilities from effects to causes=0.002261902516086896
+```
+
 
 
 
 
 ### Contact:
-Please contact mithunpaul@email.arizona.edu for any questions.
+Please contact mithunpaul@email.arizona.edu or msurdeanu@email.arizona.edu for any questions.
