@@ -50,15 +50,15 @@ Then these are the expected inputs for this application:
  - should be provided after the command line arguments of `--causes` and `--effects` respectively.
  
  e.g.,`--causes education education_standard`
- - each cause variable must be separated from another using a space e.g., `education weather`
+ - each causal/effect variable must be separated from another using a space e.g., `education weather`
  
- - if a causal variable is multi token, use underscore `_` to separate them e.g.,`education_level`
+ - if a causal/effect variable is multi token, use underscore `_` to separate them e.g.,`education_level`
 
 
 
 ##### Trigger verbs
 
-- Trigger verbs should be provided as the command line argument `--triggers`.
+- Trigger verbs should be provided after the command line argument `--triggers`.
 
 e.g.,
 ```
@@ -71,41 +71,31 @@ Note: trigger verbs are optional. If no trigger verbs are provided, code will de
 
 ### Masked language models
 
-- list of masked language models that you want to be averaged across should be mentioned in MLM_MODELS in `./calc_relation_probabilities.py`
+- list of masked language models that you want your prediction be averaged across.
+- This should be provided after the command line argument of `--models` and must be separated by space 
+e.g.,`--models bert-base-cased distilbert-base-uncased`
 - You can add the name of any models given in the [list of models](https://huggingface.co/models) by huggingface co. 
-
-    e.g.,:
-`MLM_MODELS=["bert-base-uncased","distilbert-base-uncased","bert-large-uncased","bert-base-cased"]`
+- if no model is provided by default `distilbert-base-uncased` will be used.
 
 
 
 ### Outputs
 
+- The code will output the probability in both direction. For example for the causal and effect variable example given above (weather promotes yield), the output will be 
+        - probability of yield to occur at the end of weather promotes ________.
+        - probability of weather to occur at the end of yield promotes ________.    
+- Output for command line based code will be printed in command line itself.
 
-
-
-- There are two types of output files
-    - probabilities per model: `outputs/model_name_probabilities.tsv`
-    - probabilities across models: `outputs/overall_probabilities.tsv`
-
-
-- Each line in the output file will be the average probabilities across cartesian products of 
-    - each synonym of input,
-    - each line of input,
-    - each trigger verb,
-    - each model
 
     
 e.g.,: 
 `
-1	2	PROMOTES	0.0003255476736507231
+average probabilities from causes to effect=0.0006510953470650647
+average probabilities from effects to causes=0.002261902516086896
 `
-
-means the average probability of the sentence created by input variable 2 (all income related synonyms) to occur 
-at the end of input variable 1 (all education related synonyms) across all PROMOTE VERBS
 
 
 
 
 ### Contact:
-Please contact mithunpaul@email.arizona.edu for any questions.
+Please contact mithunpaul@email.arizona.edu or msurdeanu@email.arizona.edu for any questions.
