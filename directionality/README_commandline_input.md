@@ -32,7 +32,7 @@ python calc_relation_probabilities_from_commandline_args.py --causes education e
 ```
 
 
-### Inputs
+### Details of Inputs
 
 There are the expected inputs for this application. 
 
@@ -44,14 +44,10 @@ There are the expected inputs for this application.
 
 ##### Causal and effect variables:
  
- - Input variables are to be provided in the file `data/inputs.tsv`
- - Each group of synonyms of variables must be provided in a newline and should be separated by a tab
+ - should be provided after the command line arguments of `--causes` and `--effects` respectively.
+ - each cause variable must be separated from another using a space e.g., `education weather`
+ - if a causal variable is multi token, use underscore `_` to separate them e.g.,`education_level`
 
-e.g.,
-```
-1	education	education standard
-2	income	income level
-```
 
 
 ##### Trigger verbs
