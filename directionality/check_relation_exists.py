@@ -22,10 +22,10 @@ if __name__ == "__main__":
     for k,v in promote_inhibit_causal_triggers.items():
         average_calculator=DirectionalProbabilities(causes=args.cause, effects=args.effect, models=args.models, triggers=set(v))
         dir1,dir2 = average_calculator.get_prob_across_models()
-        print(f"*************")
-        print(f"triggers:{set(v)}")
-        print(f"average probabilities from cause to effect={dir1}")
-        print(f"average probabilities from effect to cause={dir2}")
+        # print(f"*************")
+        # print(f"triggers:{set(v)}")
+        # print(f"average probabilities from cause to effect={dir1}")
+        # print(f"average probabilities from effect to cause={dir2}")
         if (dir1>args.threshold) or (dir2>args.threshold):
             print(f"found that some relation between {args.cause} to {args.effect} exists")
             exit()
