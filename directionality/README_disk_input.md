@@ -27,10 +27,10 @@ data modeling.
 
 ###### To execute :
 
-`python  calc_relation_probabilities.py [input_file]`
+`python  calc_relation_probabilities_from_disk_inputs.py [input_file]`
 
 e.g.,:
- `python  calc_relation_probabilities.py data/inputs.tsv    `
+ `python  calc_relation_probabilities_from_disk_inputs.py data/inputs.tsv    `
 ### Inputs
 
 There are the expected inputs for this application. 

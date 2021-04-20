@@ -1,4 +1,7 @@
-
+def read_file(filename):
+    with (open(filename)) as f:
+        lines=f.read
+        return lines
 
 def initalize_file(filepath):
     with open(filepath, "w") as f:

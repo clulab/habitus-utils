@@ -111,9 +111,10 @@ def fill_dict(overall_prob_averages_across_models,unique_id_datapoint,avg_prob):
         current_value.append(avg_prob)
         overall_prob_averages_across_models[unique_id_datapoint] = current_value
 
+
 def calc_average_probabilities(all_causes, all_triggers, all_effects, model, tokenizer, overall_prob_averages_across_models):
     """
-    calc_average_probabilities calculates the probability of all the given type of effect tokens to occur at the end of
+    calculates the probability of all the given type of effect tokens to occur at the end of
     all the given types of causes + all the given types of triggers.
 
     :param all_causes: dict of all types of causes tokens in a sentence. e.g., dict_items([('1', ['education', 'education standard']), ('2', ['income', 'income level'])])
@@ -124,7 +125,7 @@ def calc_average_probabilities(all_causes, all_triggers, all_effects, model, tok
     :return: overall_prob_averages_across_models . a dict for calculating average probability across across language models
     +writes the average probabilities per each cartesian product onto disk
     """
-    # for each type of trigger verb
+
     for trigger_group_name,triggers in all_triggers:
         # for each line in the input tsv file
         for id_cause, cause_synonyms in all_causes:
