@@ -64,11 +64,20 @@ def read_data(filename):
             id_variables[id]=cause_effect_synonyms
     return id_variables
 
-names_triggers={
+promote_inhibit_triggers={
     "PROMOTES":all_promote_verbs,
     "INHIBITS":all_inhibits_verbs,
     "DOES_NOT_PROMOTE":all_does_not_promote_verbs,
     "DOES_NOT_INHIBT":all_does_not_inhibits_verbs
+}
+
+promote_inhibit_causal_triggers={
+    "PROMOTES":all_promote_verbs,
+    "INHIBITS":all_inhibits_verbs,
+    "CAUSAL":all_causal_verbs,
+    "DOES_NOT_PROMOTE":all_does_not_promote_verbs,
+    "DOES_NOT_INHIBT":all_does_not_inhibits_verbs,
+    "DOES_NOT_CAUSE":all_does_not_cauase_verbs
 }
 
 def calc_average_probabilities_across_models_write_disk(overall_prob_averages_across_models, output_file_overall):
@@ -111,9 +120,10 @@ def fill_dict(overall_prob_averages_across_models,unique_id_datapoint,avg_prob):
         current_value.append(avg_prob)
         overall_prob_averages_across_models[unique_id_datapoint] = current_value
 
+
 def calc_average_probabilities(all_causes, all_triggers, all_effects, model, tokenizer, overall_prob_averages_across_models):
     """
-    calc_average_probabilities calculates the probability of all the given type of effect tokens to occur at the end of
+    calculates the probability of all the given type of effect tokens to occur at the end of
     all the given types of causes + all the given types of triggers.
 
     :param all_causes: dict of all types of causes tokens in a sentence. e.g., dict_items([('1', ['education', 'education standard']), ('2', ['income', 'income level'])])
@@ -124,7 +134,7 @@ def calc_average_probabilities(all_causes, all_triggers, all_effects, model, tok
     :return: overall_prob_averages_across_models . a dict for calculating average probability across across language models
     +writes the average probabilities per each cartesian product onto disk
     """
-    # for each type of trigger verb
+
     for trigger_group_name,triggers in all_triggers:
         # for each line in the input tsv file
         for id_cause, cause_synonyms in all_causes:
@@ -151,7 +161,7 @@ if __name__ == "__main__":
         model = AutoModelForMaskedLM.from_pretrained(each_model)
         input_file=parse_arguments()
         data = read_data(input_file)
-        calc_average_probabilities(all_causes=data.items(), all_triggers=names_triggers.items(), all_effects=data.items(), model=model, tokenizer=tokenizer, overall_prob_averages_across_models=overall_prob_averages_across_models)
+        calc_average_probabilities(all_causes=data.items(), all_triggers=promote_inhibit_triggers.items(), all_effects=data.items(), model=model, tokenizer=tokenizer, overall_prob_averages_across_models=overall_prob_averages_across_models)
     # output file for overall across models average
     output_file_overall = f"outputs/overall_probabilities.tsv"
     initalize_file(output_file_overall)
