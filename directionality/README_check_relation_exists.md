@@ -25,7 +25,7 @@ find probability of the token `income to occur at the end of :
 ###### To execute :
 
 ```
-python check_relation_exists.py --cause education  --effect income   --models distilbert-base-uncased
+python check_relation_exists.py --cause education  --effect income   --models distilbert-base-uncased --threshold 0.001
 ```
 
 

@@ -64,11 +64,20 @@ def read_data(filename):
             id_variables[id]=cause_effect_synonyms
     return id_variables
 
-names_triggers={
+promote_inhibit_triggers={
     "PROMOTES":all_promote_verbs,
     "INHIBITS":all_inhibits_verbs,
     "DOES_NOT_PROMOTE":all_does_not_promote_verbs,
     "DOES_NOT_INHIBT":all_does_not_inhibits_verbs
+}
+
+promote_inhibit_causal_triggers={
+    "PROMOTES":all_promote_verbs,
+    "INHIBITS":all_inhibits_verbs,
+    "CAUSAL":all_causal_verbs,
+    "DOES_NOT_PROMOTE":all_does_not_promote_verbs,
+    "DOES_NOT_INHIBT":all_does_not_inhibits_verbs,
+    "DOES_NOT_CAUSE":all_does_not_cauase_verbs
 }
 
 def calc_average_probabilities_across_models_write_disk(overall_prob_averages_across_models, output_file_overall):
@@ -152,7 +161,7 @@ if __name__ == "__main__":
         model = AutoModelForMaskedLM.from_pretrained(each_model)
         input_file=parse_arguments()
         data = read_data(input_file)
-        calc_average_probabilities(all_causes=data.items(), all_triggers=names_triggers.items(), all_effects=data.items(), model=model, tokenizer=tokenizer, overall_prob_averages_across_models=overall_prob_averages_across_models)
+        calc_average_probabilities(all_causes=data.items(), all_triggers=promote_inhibit_triggers.items(), all_effects=data.items(), model=model, tokenizer=tokenizer, overall_prob_averages_across_models=overall_prob_averages_across_models)
     # output file for overall across models average
     output_file_overall = f"outputs/overall_probabilities.tsv"
     initalize_file(output_file_overall)

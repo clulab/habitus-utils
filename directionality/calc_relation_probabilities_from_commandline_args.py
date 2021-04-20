@@ -38,12 +38,10 @@ def parse_arguments():
         argparser.add_argument("--triggers",nargs='+', help="list of trigger_verbs as strings separated by space e.g., improves accelerates boosts")
         argparser.add_argument("--models",nargs='+',default=['distilbert-base-uncased'], help="list of names of masked language models as strings separated by space  e.g., bert-base-cased distilbert-base-uncased")
         args = argparser.parse_args()
-
         if (args.triggers):
             pass
         else:
             args.triggers=all_promote_verbs
-
         replace_underscore_with_space(args.causes)
         replace_underscore_with_space(args.effects)
         return args
