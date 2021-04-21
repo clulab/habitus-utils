@@ -33,7 +33,7 @@ def prob_expected_word(text_with_mask, expected_word, tokenizer, model):
     prob= token_probs[expected_word]
     return prob
 
-def calc_rel_prob(cause, effect, triggers,tokenizer,model):
+def calc_rel_prob(cause, effect, triggers,tokenizer,model,threshold=0, check_directionality=False):
     """
     calc_rel_prob calculates the probability of the effect token to occur at the end of a sentence created as
     'cause triggers [MASK]' using the masked language 'model'
@@ -50,6 +50,11 @@ def calc_rel_prob(cause, effect, triggers,tokenizer,model):
             effect_chunk = ' '.join(effect_tokens[:i])
             text = f'{cause} {trigger} {effect_chunk} [MASK]'
             prob_effect=prob_expected_word(text, effect_tokens[i], tokenizer, model)
+            #this is to check if any directionality exists at all
+            if(check_directionality==True):
+                if prob_effect> threshold:
+                    print(f"found that there is a relation.  {cause} {trigger}  {effect} with probability of {prob_effect} which is > given threshold{threshold}")
+                    exit()
             probabilities.append(prob_effect)
     avg_prob = float(sum(probabilities)) / float(len(probabilities))
     return avg_prob
@@ -64,22 +69,6 @@ def read_data(filename):
             id_variables[id]=cause_effect_synonyms
     return id_variables
 
-promote_inhibit_triggers={
-    "PROMOTES":all_promote_verbs,
-    "INHIBITS":all_inhibits_verbs,
-    "DOES_NOT_PROMOTE":all_does_not_promote_verbs,
-    "DOES_NOT_INHIBT":all_does_not_inhibits_verbs
-}
-
-promote_inhibit_causal_triggers={
-    "PROMOTES":all_promote_verbs,
-    "INHIBITS":all_inhibits_verbs,
-    "CAUSAL":all_causal_verbs,
-    "DOES_NOT_PROMOTE":all_does_not_promote_verbs,
-    "DOES_NOT_INHIBT":all_does_not_inhibits_verbs,
-    "DOES_NOT_CAUSE":all_does_not_cauase_verbs
-}
-
 def calc_average_probabilities_across_models_write_disk(overall_prob_averages_across_models, output_file_overall):
     for k,v in overall_prob_averages_across_models.items():
         avg_prob_across_models = float(sum(v)) / float(len(v))
@@ -88,7 +77,7 @@ def calc_average_probabilities_across_models_write_disk(overall_prob_averages_ac
 
 
 
-def calc_average_probabilities_across_synonyms(cause_synonyms,effect_synonyms,triggers,model,tokenizer):
+def calc_average_probabilities_across_synonyms(cause_synonyms,effect_synonyms,triggers,model,tokenizer,threshold=0, check_directionality=False):
     """
        calc_average_probabilities_across_synonyms calculates the probability of all the given effect tokens to occur at the end of
        all the given causes + all the given triggers.
@@ -103,7 +92,7 @@ def calc_average_probabilities_across_synonyms(cause_synonyms,effect_synonyms,tr
     probabilities=[]
     for cause in cause_synonyms:
         for effect in effect_synonyms:
-            p = calc_rel_prob(cause, effect, triggers, tokenizer, model)
+            p = calc_rel_prob(cause, effect, triggers, tokenizer, model,threshold, check_directionality)
             probabilities.append(p)
     # calculate probability average
     avg_prob = float(sum(probabilities)) / float(len(probabilities))

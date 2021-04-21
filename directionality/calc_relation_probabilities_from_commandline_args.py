@@ -13,15 +13,15 @@ class DirectionalProbabilities:
     def calc_list_avg(self,list_averages):
         return float(sum(list_averages)) / float(len(list_averages))
 
-    def get_prob_across_models(self):
+    def get_prob_across_models(self,threshold=0, check_directionality=False):
         dir1_probs=[]
         dir2_probs = []
         for each_model in self.models:
             tokenizer = AutoTokenizer.from_pretrained(each_model)
             model = AutoModelForMaskedLM.from_pretrained(each_model)
-            avg_prob = calc_average_probabilities_across_synonyms(self.causes, self.effects, self.triggers, model,tokenizer)
+            avg_prob = calc_average_probabilities_across_synonyms(self.causes, self.effects, self.triggers, model,tokenizer,threshold, check_directionality)
             dir1_probs.append(avg_prob)
-            avg_prob_rev = calc_average_probabilities_across_synonyms(self.effects, self.causes, self.triggers, model, tokenizer)
+            avg_prob_rev = calc_average_probabilities_across_synonyms(self.effects, self.causes, self.triggers, model, tokenizer,threshold, check_directionality)
             dir2_probs.append(avg_prob_rev)
         dir1_avg=self.calc_list_avg(dir1_probs)
         dir2_avg = self.calc_list_avg(dir2_probs)
@@ -46,11 +46,14 @@ def parse_arguments():
         replace_underscore_with_space(args.effects)
         return args
 
-if __name__ == "__main__":
+def main():
     args = parse_arguments()
-    average_calculator=DirectionalProbabilities(args.causes, args.effects, args.triggers, args.models)
-    dir1,dir2 = average_calculator.get_prob_across_models()
+    average_calculator = DirectionalProbabilities(args.causes, args.effects, args.triggers, args.models)
+    dir1, dir2 = average_calculator.get_prob_across_models()
     print(f"average probabilities from causes to effect={dir1}")
     print(f"average probabilities from effects to causes={dir2}")
+
+if __name__ == "__main__":
+    main()
 
 
