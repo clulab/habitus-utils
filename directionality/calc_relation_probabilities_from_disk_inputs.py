@@ -53,7 +53,7 @@ def calc_rel_prob(cause, effect, triggers,tokenizer,model,threshold=0, check_dir
             #this is to check if any directionality exists at all
             if(check_directionality==True):
                 if prob_effect> threshold:
-                    print(f"found that there is a relation.  {cause} {trigger}  {effect} with probability of {prob_effect} which is > given threshold{threshold}")
+                    print(f"found that there is a relation.  {cause} {trigger}  {effect} with probability of {prob_effect} which is > given threshold:{threshold}")
                     exit()
             probabilities.append(prob_effect)
     avg_prob = float(sum(probabilities)) / float(len(probabilities))

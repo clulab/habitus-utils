@@ -27,7 +27,12 @@ find probability of the token `income to occur at the end of :
 ```
 python check_relation_exists.py --cause education  --effect income   --models distilbert-base-uncased --threshold 0.001
 ```
+Note: instead of checking for any relation, you would rather get into details and get average probabilities pass `--use_polarity`
 
+
+```
+python check_relation_exists.py --cause education  --effect income   --models distilbert-base-uncased --threshold 0.001 --use_polarity
+```
 
 ### Details of Inputs
 

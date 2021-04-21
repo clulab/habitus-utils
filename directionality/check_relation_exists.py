@@ -1,6 +1,7 @@
 import calc_relation_probabilities_from_commandline_args
 from calc_relation_probabilities_from_commandline_args import DirectionalProbabilities,replace_underscore_with_space
 import argparse
+from argparse import *
 from data.verbs import *
 
 def parse_arguments():
@@ -11,10 +12,15 @@ def parse_arguments():
                                help="effect variable e.g., income ")
         argparser.add_argument("--models", nargs='+', default=['distilbert-base-uncased'],
                                help="list of names of masked language models as strings separated by space  e.g., bert-base-cased distilbert-base-uncased")
-        argparser.add_argument("--use_polarity", type=bool, default=False,
-                               help="the threshold value, below which probabilities are considered as no relation")
+
         argparser.add_argument("--threshold", type=float, default=0.0002,
                                help="the threshold value, below which probabilities are considered as no relation")
+
+        '''--use-polarity = true -> old behavior (refer README_commandline_input.md)
+            --use-polarity = false -> this one (refer README_check_relation_exists.md)
+        '''
+        argparser.add_argument("--use_polarity", action='store_true',
+                               help="do you want to check if a relation exists ? if yes, pass --use_polarity")
         args = argparser.parse_args()
         replace_underscore_with_space(args.cause)
         replace_underscore_with_space(args.effect)
@@ -28,11 +34,7 @@ def merge_all_verbs():
     return all_verbs
 
 if __name__ == "__main__":
-    '''
-    --use-polarity = true -> old behavior (refer README_commandline_input.md)
-    --use-polarity = false -> this one (refer README_check_relation_exists.md)
 
-    '''
     args = parse_arguments()
     if(args.use_polarity==True):
         calc_relation_probabilities_from_commandline_args.main()

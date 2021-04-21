@@ -31,7 +31,6 @@ data modeling.
 python calc_relation_probabilities_from_commandline_args.py --causes education education_standard --effects income income_level --triggers improves accelerates --models bert-base-cased distilbert-base-uncased
 ```
 
-
 ### Details of Inputs
 
 
