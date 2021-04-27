@@ -14,6 +14,9 @@ occur at the end are:average(prob(education improves income [MASK]), prob(educat
 This is useful in modeling various causal and effect statements which can then be used for many other downstream tasks like
 data modeling.
 
+Note: this application can be run as stand alone, as given here, or as an option from `check_relation_exists.py`. Refer `README_check_relation_exists.md`
+Stand alone version has more richer options 
+
 ## Steps
  ```
     conda create -n directionality python=3
