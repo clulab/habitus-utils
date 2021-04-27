@@ -1,9 +1,8 @@
-# Check if any relation exists between a given Cause and Effect Variables using Masked Language Models
+# Check if any relation exists between a given cause and effect Variable pair using Masked Language Models
 
 Given a cause and effect variable, to find if 
-there is any relation at all between the cause and effect variable. 
-
-Relations can be of the type : promotes, inhibits, or causes relation. (refer data/verbs.py for a full list)
+there is any relation at all between the cause and effect variable. Relations 
+can be of the type : promotes, inhibits, or causes relation. (refer `data/verbs.py` for a full list)
  
 
 For example for the sentence `education improves income`, this application uses several 
@@ -36,7 +35,7 @@ i.e., when you use the command line argument `--use_polarity` this code will bec
  
 
 ``` 
-python check_relation_exists.py --cause education  --effect income   --models distilbert-base-uncased --threshold 0.001 --use_polarity
+python check_relation_exists.py --cause education_level --effect income --models bert-base-cased --threshold 0.001 --use_polarity True
 ```
 
 ### Details of Inputs
@@ -82,12 +81,20 @@ e.g.,`--models bert-base-cased distilbert-base-uncased`
 
     
 e.g.,: 
+
+`
+No relation exists between ['weather'] to ['yield'] for the given threshold;
+`
+
+`found that there is a relation.  weather improves  yield with probability of 0.0031075812876224518 which is > given threshold:0.001
+`
+
+
+- or if you used `--use_polarity True`
 ```
-
+average probabilities from causes to effect=3.653426321963909e-07
+average probabilities from effects to causes=1.250469520325876e-05
 ```
-
-
-
 
 
 ### Contact:

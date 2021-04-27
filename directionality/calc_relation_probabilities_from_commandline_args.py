@@ -36,7 +36,8 @@ def parse_arguments():
         argparser.add_argument("--causes", nargs='+', help="list of cause variables and their synonyms as strings separated by space e.g., education education_standard",)
         argparser.add_argument("--effects",nargs='+', help="list of effect variables and their synonyms as strings separated by space e.g., income income_level")
         argparser.add_argument("--triggers",nargs='+', help="list of trigger_verbs as strings separated by space e.g., improves accelerates boosts")
-        argparser.add_argument("--models",nargs='+',default=['distilbert-base-uncased'], help="list of names of masked language models as strings separated by space  e.g., bert-base-cased distilbert-base-uncased")
+        argparser.add_argument("--models",nargs='+',default=['bert-base-cased'],
+                               help="list of names of masked language models as strings separated by space  e.g., bert-base-cased distilbert-base-uncased")
         args = argparser.parse_args()
         if (args.triggers):
             pass
@@ -45,13 +46,16 @@ def parse_arguments():
         replace_underscore_with_space(args.causes)
         replace_underscore_with_space(args.effects)
         return args
-
-def main():
-    args = parse_arguments()
-    average_calculator = DirectionalProbabilities(args.causes, args.effects, args.triggers, args.models)
+def calc_prob(causes, effects, triggers, models):
+    average_calculator = DirectionalProbabilities(causes, effects, triggers, models)
     dir1, dir2 = average_calculator.get_prob_across_models()
     print(f"average probabilities from causes to effect={dir1}")
     print(f"average probabilities from effects to causes={dir2}")
+
+def main():
+    args = parse_arguments()
+    calc_prob(args.causes, args.effects, args.triggers, args.models)
+
 
 if __name__ == "__main__":
     main()

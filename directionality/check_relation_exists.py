@@ -1,8 +1,19 @@
 import calc_relation_probabilities_from_commandline_args
-from calc_relation_probabilities_from_commandline_args import DirectionalProbabilities,replace_underscore_with_space
+from calc_relation_probabilities_from_commandline_args import DirectionalProbabilities,replace_underscore_with_space,calc_prob
 import argparse
 from argparse import *
 from data.verbs import *
+
+
+def str2bool(v):
+    if isinstance(v, bool):
+       return v
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected.')
 
 def parse_arguments():
         argparser = argparse.ArgumentParser("to parse causal documents")
@@ -19,8 +30,8 @@ def parse_arguments():
         '''--use-polarity = true -> old behavior (refer README_commandline_input.md)
             --use-polarity = false -> this one (refer README_check_relation_exists.md)
         '''
-        argparser.add_argument("--use_polarity", action='store_true',
-                               help="do you want to check if a relation exists ? if yes, pass --use_polarity")
+        argparser.add_argument("--use_polarity", type=str2bool, default=False,
+                               help="do you want to do more than check if a relation exists-i.e get details of probabilities ? if yes, pass --use_polarity")
         args = argparser.parse_args()
         replace_underscore_with_space(args.cause)
         replace_underscore_with_space(args.effect)
@@ -37,7 +48,7 @@ if __name__ == "__main__":
 
     args = parse_arguments()
     if(args.use_polarity==True):
-        calc_relation_probabilities_from_commandline_args.main()
+        calc_prob(args.cause, args.effect, set(all_promote_verbs), args.models)
     else:
         all_verbs=merge_all_verbs()
         average_calculator=DirectionalProbabilities(causes=args.cause, effects=args.effect, models=args.models, triggers=set(all_verbs))
