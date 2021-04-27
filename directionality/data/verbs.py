@@ -10,3 +10,22 @@ all_does_not_promote_verbs = ["does not improve", "does not accelerate", "does n
 all_does_not_inhibits_verbs = ["does not diminish", "does not drop", "does not drain", "does not exhaust", "does not impair", "does not inhibit", "does not hamper",
                                      "does not hinder", "does not eliminate", "does not disrupt"]
 all_does_not_cauase_verbs = ["does not influence", "does not affect", "does not alter", "does not modify", "does not impact", "does not change", "does not displace"]
+
+
+
+
+promote_inhibit_triggers={
+    "PROMOTES":all_promote_verbs,
+    "INHIBITS":all_inhibits_verbs,
+    "DOES_NOT_PROMOTE":all_does_not_promote_verbs,
+    "DOES_NOT_INHIBT":all_does_not_inhibits_verbs
+}
+
+promote_inhibit_causal_triggers={
+    "PROMOTES":all_promote_verbs,
+    "INHIBITS":all_inhibits_verbs,
+    "CAUSAL":all_causal_verbs,
+    "DOES_NOT_PROMOTE":all_does_not_promote_verbs,
+    "DOES_NOT_INHIBT":all_does_not_inhibits_verbs,
+    "DOES_NOT_CAUSE":all_does_not_cauase_verbs
+}
