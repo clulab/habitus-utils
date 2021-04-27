@@ -1,16 +1,19 @@
 # Check if any relation exists between a given Cause and Effect Variables using Masked Language Models
 
-Given a cause and effect variable, find if it has any relation at all. i.e doesnt have any promotes, inhibits, or causes relation.
- 
- 
-This application uses various 
-[masked language models](https://arxiv.org/pdf/1810.04805.pdf&usg=ALkJrhhzxlCL6yTht2BRmH9atgvKFxHsxQ) 
-to find the probability of each effect token to appear at the end of a sentence which has a causal token with verb. For example for the sentence `education improves income`, this application will
-find probability of the token `income to occur at the end of :
-        education improves ______ etc.
+Given a cause and effect variable, to find if 
+there is any relation at all between the cause and effect variable. 
 
-    
-   note: threshold value. if the probability is below that consider it as no relation.
+Relations can be of the type : promotes, inhibits, or causes relation. (refer data/verbs.py for a full list)
+ 
+
+For example for the sentence `education improves income`, this application uses several 
+[masked language models](https://arxiv.org/pdf/1810.04805.pdf&usg=ALkJrhhzxlCL6yTht2BRmH9atgvKFxHsxQ) to check if there is a positive probability of the token `income to occur at the end of :education improves ______ etc.
+If the probability is more than a user specified threshold value, the application will print that there is a relation.
+
+ 
+ 
+
+   
 ## Steps
  ```
     conda create -n directionality python=3
@@ -27,10 +30,12 @@ find probability of the token `income to occur at the end of :
 ```
 python check_relation_exists.py --cause education  --effect income   --models distilbert-base-uncased --threshold 0.001
 ```
-Note: instead of checking for any relation, you would rather get into details and get average probabilities pass `--use_polarity`
+Note: instead of checking for any relation, if you would rather get into details and get average probabilities pass `--use_polarity`
+i.e., when you use the command line argument `--use_polarity` this code will become the same as
+ `calc_relation_probabilities_from_commandline_args` . Refer README_commandline_input.md for details.
+ 
 
-
-```
+``` 
 python check_relation_exists.py --cause education  --effect income   --models distilbert-base-uncased --threshold 0.001 --use_polarity
 ```
 
@@ -49,7 +54,7 @@ Then these are the expected inputs for this application:
 
 ##### Causal and effect variables:
  
- - should be provided after the command line arguments of `--causes` and `--effect` respectively.
+ - should be provided after the command line arguments of `--cause` and `--effect` respectively.
  
  e.g.,`--cause education`
  
@@ -65,8 +70,8 @@ given in `data/verbs.py`
 - list of masked language models that you want your prediction be averaged across.
 - This should be provided after the command line argument of `--models` and must be separated by space 
 e.g.,`--models bert-base-cased distilbert-base-uncased`
-- You can add the name of any models given in the [list of models](https://huggingface.co/models) by huggingface co. 
-- Masked models are optional. If no model is provided by default `distilbert-base-uncased` will be used.
+- Even though we have tested with `--models bert-large-uncased bert-large-cased bert-base-uncased bert-base-cased`  you should ideally be able to use most of the models given in the [list of models](https://huggingface.co/models) by huggingface co. 
+- parameter `--models` is optional. If no model is provided by default `bert-base-cased` will be used.
 
 
 

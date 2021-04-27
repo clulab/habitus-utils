@@ -10,7 +10,7 @@ def parse_arguments():
                                help="cause variables  e.g., education ", )
         argparser.add_argument("--effect", nargs='+',
                                help="effect variable e.g., income ")
-        argparser.add_argument("--models", nargs='+', default=['distilbert-base-uncased'],
+        argparser.add_argument("--models", nargs='+', default=['bert-base-cased'],
                                help="list of names of masked language models as strings separated by space  e.g., bert-base-cased distilbert-base-uncased")
 
         argparser.add_argument("--threshold", type=float, default=0.0002,
@@ -45,3 +45,5 @@ if __name__ == "__main__":
         if (dir1>args.threshold) or (dir2>args.threshold):
             print(f"found that some relation between {args.cause} to {args.effect} exists")
             exit()
+        else:
+            print(f"No relation exists between {args.cause} to {args.effect} for the given threshold")
