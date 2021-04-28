@@ -38,11 +38,6 @@ def parse_arguments():
         return args
 
 
-def merge_all_verbs():
-    all_verbs=[]
-    for k,v in promote_inhibit_causal_triggers.items():
-        all_verbs+=v
-    return all_verbs
 
 if __name__ == "__main__":
 
@@ -50,7 +45,7 @@ if __name__ == "__main__":
     if(args.use_polarity==True):
         calc_prob(args.cause, args.effect, set(all_promote_verbs), args.models)
     else:
-        all_verbs=merge_all_verbs()
+        #all_verbs=merge_all_verbs()
         average_calculator=DirectionalProbabilities(causes=args.cause, effects=args.effect, models=args.models, triggers=set(all_verbs))
         dir1,dir2 = average_calculator.get_prob_across_models(threshold=args.threshold, check_directionality=True)
         if (dir1>args.threshold) or (dir2>args.threshold):
