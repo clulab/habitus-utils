@@ -38,11 +38,6 @@ def parse_arguments():
         return args
 
 
-def merge_all_verbs():
-    all_verbs=[]
-    for k,v in promote_inhibit_causal_triggers.items():
-        all_verbs+=v
-    return all_verbs
 
 if __name__ == "__main__":
 
