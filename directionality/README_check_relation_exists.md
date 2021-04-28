@@ -1,15 +1,19 @@
-# Check if any relation exists between a given cause and effect Variable pair using Masked Language Models
+# Check if any relation exists between a given cause and effect variable pair (using Masked Language Models)
 
-Given a cause and effect variable, to find if 
+Given a cause and effect variable, this code finds if 
 there is any relation at all between the cause and effect variable. Relations 
 can be of the type : promotes, inhibits, or causes relation. (refer `data/verbs.py` for a full list)
  
 
 For example for the sentence `education improves income`, this application uses several 
-[masked language models](https://arxiv.org/pdf/1810.04805.pdf&usg=ALkJrhhzxlCL6yTht2BRmH9atgvKFxHsxQ) to check if there is a positive probability of the token `income to occur at the end of :education improves ______ etc.
+[masked language models](https://arxiv.org/pdf/1810.04805.pdf&usg=ALkJrhhzxlCL6yTht2BRmH9atgvKFxHsxQ) 
+to check if there is a positive probability of the token `income` to occur at the end of the sentence:
+`education improves ______` etc.
 If the probability is more than a user specified threshold value, the application will print that there is a relation.
 
+ Note: instead of checking for any relation, if you would rather get into details and get all average probabilities pass `--use_polarity True`
  
+
  
 
    
@@ -29,8 +33,7 @@ If the probability is more than a user specified threshold value, the applicatio
 ```
 python check_relation_exists.py --cause education  --effect income   --models distilbert-base-uncased --threshold 0.001
 ```
-Note: instead of checking for any relation, if you would rather get into details and get average probabilities pass `--use_polarity`
-i.e., when you use the command line argument `--use_polarity` this code will become the same as
+When you use the command line argument `--use_polarity True` this code will become the same as
  `calc_relation_probabilities_from_commandline_args` . Refer README_commandline_input.md for details.
  
 
@@ -62,8 +65,9 @@ Then these are the expected inputs for this application:
 
 
 ##### Trigger verbs
-given in `data/verbs.py`
-
+the verbs you want cause and effect variables to be measured by `--triggers` i.e the
+machine will take average of probability of y to occur in sentences like  `x improves y`, `x accelerates y` etc. where improves accelerates etc are the triggers.
+If no input is provided for `--triggers` by default all the verbs given in `data/verbs.py` are used as trigger verbs. 
 ### Masked language models
 
 - list of masked language models that you want your prediction be averaged across.
