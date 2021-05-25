@@ -1,0 +1,27 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1671\cocoasubrtf600
+{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
+\margl1440\margr1440\vieww16480\viewh16860\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\fs36 \cf0 Data about farms, plots, villages, agricultural unions and seasons can be found at {\field{\*\fldinst{HYPERLINK "https://pitt.box.com/s/pawh490n7h689egixm5l9arb2ycn5qzw"}}{\fldrslt here}} on the Pitt Box server.  \
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+\cf0 I encourage you to read {\field{\*\fldinst{HYPERLINK "https://pitt.app.box.com/file/775036416378"}}{\fldrslt data_cleaning.pdf}} because it documents a lot of issues that came up when cleaning data.  Also, you might want to know how I binned or renamed or recoded variables.  Also, if you have local knowledge of farming in Senegal, then you will probably have better ideas than mine about how to clean the data. (Unfortunately, Jupyter\'92s latex rendering utility couldn\'92t handle the big tables, so if you want to dig into farmer or village stats or coop stats, you\'92ll have to run the notebook or examine the results  at {\field{\*\fldinst{HYPERLINK "https://pitt.box.com/s/4uwc8z2pkqe49lfqrgusxl0djr9t7l6x"}}{\fldrslt demographicfarmer_2017b_cleaned}},  {\field{\*\fldinst{HYPERLINK "https://pitt.box.com/s/dspga19bnh9tk9aprv66b94aiddufjv0"}}{\fldrslt by village}} , and {\field{\*\fldinst{HYPERLINK "https://pitt.box.com/s/367ohh6lbs3kanxgahtohvan0zpf6f90"}}{\fldrslt agricultural union (aka coop)}}. \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+\cf0 \
+The folders{\field{\*\fldinst{HYPERLINK "https://pitt.box.com/s/q6l2u0ant82she78b07288bpkpc56a38"}}{\fldrslt  translated_2017b}} and {\field{\*\fldinst{HYPERLINK "https://pitt.box.com/s/7ttqao2j5oljr1uc9a31gom6b6314y30"}}{\fldrslt untranslated_2017b}} each contain four files for village, farmer, plot and season data.  The Parent.ID field associated with each record points to a record \'93one level up\'94; for example, a season Parent.ID identifies a record in plot data, whereas the plot Parent.ID identifies a record in the farmer data and a farmer Parent.ID identifies a record in the village data.\
+\
+I have processed {\field{\*\fldinst{HYPERLINK "https://pitt.box.com/s/0mskzs38jpyatjr8aeua04t6ozbie6zs"}}{\fldrslt farmer_2017b}} extensively.  I\'92ve done less with plot and village data, and almost nothing with season data.  Vijay has worked on season data and we should meet to agree on formats and other conventions.\
+\
+The folder called {\field{\*\fldinst{HYPERLINK "https://pitt.app.box.com/folder/131436606139"}}{\fldrslt processed}} contains two kinds of data.  The file {\field{\*\fldinst{HYPERLINK "https://pitt.box.com/s/4uwc8z2pkqe49lfqrgusxl0djr9t7l6x"}}{\fldrslt demographicfarmer_2017b_cleaned}} is the result of cleaning the farmer data.  The other files hold the results of grouping farmers {\field{\*\fldinst{HYPERLINK "https://pitt.box.com/s/dspga19bnh9tk9aprv66b94aiddufjv0"}}{\fldrslt by village}} and by {\field{\*\fldinst{HYPERLINK "https://pitt.box.com/s/367ohh6lbs3kanxgahtohvan0zpf6f90"}}{\fldrslt agricultural union (aka coop)}} and calculating statistics within groups.  For example, if you want to know the median number of children per farm in a particular village, you\'92d use the village_stats file.  \
+\
+The folder called {\field{\*\fldinst{HYPERLINK "https://pitt.box.com/s/18t57u46o07qx9huc3yu6si4i8lpa3x8"}}{\fldrslt Code and Notebooks}} has a jupyter notebook that contains the code I wrote to clean data and generate the files in the folder called \'93processed\'94.  It also contains the python code itself in case you want to modify it and clean data differently.  And it contains a pdf of the jupyter notebook if you want to see how I cleaned the data without actually running python.\
+\
+If you want to run either the ipynb notebook or the python itself, you\'92ll need to change the filepaths to point to wherever you want to store the original Manobi data and save the processed data. \
+\
+\
+\
+\
+}
