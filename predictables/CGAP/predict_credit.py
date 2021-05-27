@@ -15,7 +15,7 @@ all_rows=Data.col('uga','A32')
 assert all_rows is not None
 assert len(all_rows)>0
 
-
+all_rows=all_rows.dropna()
 train,test_dev=train_test_split(all_rows,  test_size=0.2, shuffle=True)
 test,dev=train_test_split(test_dev,  test_size=0.5, shuffle=True)
 
