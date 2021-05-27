@@ -10,7 +10,9 @@ Data = CGAP_Decoded()
 Data.read_and_decode('/Users/mordor/research/habitus_project/mycode/predictables/Data/Data Objects/CGAP_JSON.txt')
 countries = ['bgd','cdi','moz','nga','tan','uga']
 #all_rows=Data.col('uga','F58')
-all_rows=Data.col('uga','A32')
+#all_rows=Data.col('uga','A32')
+all_rows=Data.col('bgd','D15')
+
 
 assert all_rows is not None
 assert len(all_rows)>0
@@ -38,9 +40,9 @@ dev_y_pred = model.predict(x_dev.reshape(-1, 1))
 plt.scatter(x_dev, y_dev,  color='black')
 plt.scatter(x_dev, dev_y_pred,color='blue')
 
-for index,(x,y) in enumerate(zip(x_dev, dev_y_pred)):
-    if(index%5)==0:
-        plt.annotate('(%s, %s)' % (x,y), xy=(x,y),xytext=(x,y+2), textcoords='data')
+# for index,(x,y) in enumerate(zip(x_dev, dev_y_pred)):
+#     if(index%5)==0:
+#         plt.annotate('(%s, %s)' % (x,y), xy=(x,y),xytext=(x,y+2), textcoords='data')
 
 
 plt.xlabel("farmers")
