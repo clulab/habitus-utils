@@ -9,7 +9,12 @@ sys.path.append('/Users/mordor/research/habitus_project/mycode/predictables/Data
 Data = CGAP_Decoded()
 Data.read_and_decode('/Users/mordor/research/habitus_project/mycode/predictables/Data/Data Objects/CGAP_JSON.txt')
 countries = ['bgd','cdi','moz','nga','tan','uga']
-all_rows=Data.col('uga','F58')
+#all_rows=Data.col('uga','F58')
+all_rows=Data.col('uga','A32')
+
+assert all_rows is not None
+assert len(all_rows)>0
+
 
 train,test_dev=train_test_split(all_rows,  test_size=0.2, shuffle=True)
 test,dev=train_test_split(test_dev,  test_size=0.5, shuffle=True)
