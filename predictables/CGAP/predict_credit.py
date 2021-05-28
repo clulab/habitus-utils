@@ -6,15 +6,15 @@ import matplotlib.pyplot as plt
 from CGAP_JSON_Encoders_Decoders import CGAP_Decoded
 from sklearn.neural_network import MLPClassifier
 from sklearn.metrics import classification_report
+import pandas as pd
 
 sys.path.append('/Users/mordor/research/habitus_project/mycode/predictables/Data/Data Objects/Code and Notebooks')
 Data = CGAP_Decoded()
 Data.read_and_decode('/Users/mordor/research/habitus_project/mycode/predictables/Data/Data Objects/CGAP_JSON.txt')
 countries = ['bgd','cdi','moz','nga','tan','uga']
-
 #do you have loan-use classifier
-all_rows=Data.col('uga','F58')
-#all_rows=Data.col('uga','A32')
+#all_rows=Data.col('uga','F58')
+
 
 #occasional jobs
 #all_rows=Data.col('bgd','D15')
@@ -22,10 +22,30 @@ all_rows=Data.col('uga','F58')
 #land size-use regression
 #all_rows=Data.col('bgd','A2')
 
+#all_rows=Data.uga_A1
 
+#all_rows=country.H17.df.future_purchases
 
+#qtype=multi
+# df = pd.concat([
+#     Data.col('moz','A5','Rice'),
+#     Data.col('moz','H28'), # "col" version
+#     Data.moz_H28.df.H28,  # non="col" version: you have to say H28 twice
+#         ], axis=1)
+
+df=Data.col('bgd','A1')
+for k,v in Data.__dict__.items():
+    if (v.qtype=="single"):
+        lab=v.label
+        df=pd.concat([df,Data.col('bgd',lab)],axis=1)
+
+print(df)
+exit()
 assert all_rows is not None
 assert len(all_rows)>0
+
+
+
 
 all_rows=all_rows.dropna()
 train,test_dev=train_test_split(all_rows,  test_size=0.2, shuffle=True)
