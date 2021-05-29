@@ -207,8 +207,10 @@ class Country_Decoded (CGAP_Decoded):
         for k,v in self.__dict__.items() :
             if v.qtype=='single':
                 label=v.label
-                if (label not in qns_to_avoid):
-                    for index,x in enumerate(v.df[label]):
+                for index,x in enumerate(v.df[label]):
+                    if (label not in qns_to_avoid):
+                        if index>225:
+                            print("found")
                         #if an answer is nan replace it with -1
                         if math.isnan(x):
                             v.df.at[(index+1),label]=-1

@@ -10,24 +10,21 @@ import pandas as pd
 
 
 COUNTRY='bgd'
+#pick one of the columns as gold label- we are going to make machine predicttt thatt
+#f58=does the farmer currenttly have any loans
+GOLD="F58"
+
+
+
 sys.path.append('/Users/mordor/research/habitus_project/mycode/predictables/Data/Data Objects/Code and Notebooks')
 Data = CGAP_Decoded()
 Data.read_and_decode('/Users/mordor/research/habitus_project/mycode/predictables/Data/Data Objects/CGAP_JSON.txt')
 countries = ['bgd','cdi','moz','nga','tan','uga']
-#do you have loan-use classifier
-#all_rows=Data.col('uga','F58')
 bgd = Country_Decoded(COUNTRY,Data)
 
 
-#qtype=multi
-# df = pd.concat([
-#     Data.col('moz','A5','Rice'),
-#     Data.col('moz','H28'), # "col" version
-#     Data.moz_H28.df.H28,  # non="col" version: you have to say H28 twice
-#         ], axis=1)
-
-
-#for the list of answers available for tthis country
+#some qns are dependant on previous answers. or are just bookkeeping.-avoid them in training
+#todo: do something about qns dependantt on previous answers. eg. A26
 qns_to_avoid=['D19','A26','COUNTRY','Country_Decoded']
 df1=bgd.concat_all_single_answer_qns(qns_to_avoid)
 df2=bgd.concat_all_multiple_answer_qns(qns_to_avoid)
@@ -36,16 +33,19 @@ df_combined = pd.concat([df1, df2], axis=1)
 
 
 
+#gold_data=Data.col(COUNTRY,GOLD)
+
+
 
 
 #all_rows=df_combined.dropna()
-train,test_dev=train_test_split(df_combined,  test_size=0.2, shuffle=True)
-test,dev=train_test_split(test_dev,  test_size=0.5, shuffle=True)
+train,test_dev=train_test_split(df_combined,  test_size=0.2)
+test,dev=train_test_split(test_dev,  test_size=0.5)
 
-x_train_gold=np.asarray(list(train.index))
-y_train_gold=np.asarray(list(train))
-x_dev_gold=np.asarray(list(dev.index))
-y_dev_gold=np.asarray(list(dev))
+x_train_gold=np.asarray(train)
+y_train_gold=np.asarray(train[GOLD])
+x_dev_gold=np.asarray(dev)
+y_dev_gold=np.asarray(dev[GOLD])
 
 # Create linear regression object
 #model = linear_model.LinearRegression()
