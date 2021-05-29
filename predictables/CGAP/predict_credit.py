@@ -31,24 +31,15 @@ bgd = Country_Decoded(COUNTRY,Data)
 qns_to_avoid=['D19','A26','COUNTRY','Country_Decoded']
 df1=bgd.concat_all_single_answer_qns(qns_to_avoid)
 df2=bgd.concat_all_multiple_answer_qns(qns_to_avoid)
-
-exit()
-
-for answers in bgd:
-    if (answers.qtype=="single"):
-        lab=answers.label
-        df=pd.concat([df,Data.col('bgd',lab)],axis=1)
-
-print(df)
-exit()
-assert all_rows is not None
-assert len(all_rows)>0
+df_combined = pd.concat([df1, df2], axis=1)
 
 
 
 
-all_rows=all_rows.dropna()
-train,test_dev=train_test_split(all_rows,  test_size=0.2, shuffle=True)
+
+
+#all_rows=df_combined.dropna()
+train,test_dev=train_test_split(df_combined,  test_size=0.2, shuffle=True)
 test,dev=train_test_split(test_dev,  test_size=0.5, shuffle=True)
 
 x_train_gold=np.asarray(list(train.index))
