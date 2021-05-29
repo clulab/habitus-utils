@@ -29,7 +29,11 @@ bgd = Country_Decoded(COUNTRY,Data)
 
 #for the list of answers available for tthis country
 qns_to_avoid=['D19','A26','COUNTRY','Country_Decoded']
-qns=bgd.get_all_answers_df(qns_to_avoid)
+df1=bgd.concat_all_single_answer_qns(qns_to_avoid)
+df2=bgd.concat_all_multiple_answer_qns(qns_to_avoid)
+
+exit()
+
 for answers in bgd:
     if (answers.qtype=="single"):
         lab=answers.label

@@ -202,7 +202,7 @@ class Country_Decoded (CGAP_Decoded):
                               for k,v in full_dataset.__dict__.items() if country in k})
 
     #for any given country, return the list of all available single qn answers
-    def get_all_answers_df(self,qns_to_avoid):
+    def concat_all_single_answer_qns(self, qns_to_avoid):
         df=None
         for k,v in self.__dict__.items() :
             if v.qtype=='single':
@@ -216,15 +216,20 @@ class Country_Decoded (CGAP_Decoded):
         assert df is not None
         return df
 
-    def col (self,label,*column):
-        """ Returns a pd series (not a df) for the label.  If label denotes a multi-answer 
-        question, a column is expected; for example, col('A5,'Rice') """                                                                  
-        obj = self.__dict__.get(label)
-        if obj.qtype == 'multi' and column == ():
-            print (f"\n{label} is a multi-answer question; please specify an answer column.")
-            print (f"\nOptions are {list(obj.column_dict.keys())}")
-            return
-        else:
-            return obj.df[column[0]] if column != () else obj.df[label]
 
-        
+    def concat_all_multiple_answer_qns(self, qns_to_avoid):
+            df=None
+            for k,v in self.__dict__.items() :
+                if v.qtype=='multi':
+                    label=v.label
+                    if (label not in qns_to_avoid):
+                          for index,x in enumerate(v.df[label]):
+                              #if an answer is nan replace it with -1
+                              if math.isnan(x):
+                                  v.df.at[(index+1),label]=-1
+                          df = pd.concat([df, v.df.dropna(axis=0)], axis=1)
+            assert df is not None
+            return df
+
+
+
