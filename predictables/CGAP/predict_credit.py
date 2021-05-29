@@ -3,28 +3,21 @@ import sys
 from sklearn.model_selection import train_test_split
 from sklearn import  linear_model
 import matplotlib.pyplot as plt
-from CGAP_JSON_Encoders_Decoders import CGAP_Decoded
+from CGAP_JSON_Encoders_Decoders import *
 from sklearn.neural_network import MLPClassifier
 from sklearn.metrics import classification_report
 import pandas as pd
 
+
+COUNTRY='bgd'
 sys.path.append('/Users/mordor/research/habitus_project/mycode/predictables/Data/Data Objects/Code and Notebooks')
 Data = CGAP_Decoded()
 Data.read_and_decode('/Users/mordor/research/habitus_project/mycode/predictables/Data/Data Objects/CGAP_JSON.txt')
 countries = ['bgd','cdi','moz','nga','tan','uga']
 #do you have loan-use classifier
 #all_rows=Data.col('uga','F58')
+bgd = Country_Decoded(COUNTRY,Data)
 
-
-#occasional jobs
-#all_rows=Data.col('bgd','D15')
-
-#land size-use regression
-#all_rows=Data.col('bgd','A2')
-
-#all_rows=Data.uga_A1
-
-#all_rows=country.H17.df.future_purchases
 
 #qtype=multi
 # df = pd.concat([
@@ -33,10 +26,13 @@ countries = ['bgd','cdi','moz','nga','tan','uga']
 #     Data.moz_H28.df.H28,  # non="col" version: you have to say H28 twice
 #         ], axis=1)
 
-df=Data.col('bgd','A1')
-for k,v in Data.__dict__.items():
-    if (v.qtype=="single"):
-        lab=v.label
+
+#for the list of answers available for tthis country
+
+qns=bgd.get_all_answers_df()
+for answers in bgd:
+    if (answers.qtype=="single"):
+        lab=answers.label
         df=pd.concat([df,Data.col('bgd',lab)],axis=1)
 
 print(df)
