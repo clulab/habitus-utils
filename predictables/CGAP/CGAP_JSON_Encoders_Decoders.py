@@ -223,10 +223,11 @@ class Country_Decoded (CGAP_Decoded):
                 if v.qtype=='multi':
                     label=v.label
                     if (label not in qns_to_avoid):
-                          for index,x in enumerate(v.df[label]):
-                              #if an answer is nan replace it with -1
-                              if math.isnan(x):
-                                  v.df.at[(index+1),label]=-1
+                          for sub_qn in (v.df):
+                              for index2,y in enumerate(v.df[sub_qn]):
+                                #if a value is nan replace it with -1
+                                if math.isnan(y):
+                                  v.df.at[(index2+1),sub_qn]=-1
                           df = pd.concat([df, v.df.dropna(axis=0)], axis=1)
             assert df is not None
             return df
