@@ -28,8 +28,8 @@ bgd = Country_Decoded(COUNTRY,Data)
 
 
 #for the list of answers available for tthis country
-
-qns=bgd.get_all_answers_df()
+qns_to_avoid=['D19','A26','COUNTRY','Country_Decoded']
+qns=bgd.get_all_answers_df(qns_to_avoid)
 for answers in bgd:
     if (answers.qtype=="single"):
         lab=answers.label

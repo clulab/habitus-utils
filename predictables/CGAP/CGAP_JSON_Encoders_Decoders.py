@@ -11,7 +11,7 @@ import os, json
 
 import numpy as np
 import pandas as pd
-
+import math
 
 class Question_Encoder ():
     """
@@ -201,16 +201,18 @@ class Country_Decoded (CGAP_Decoded):
         self.__dict__.update({k.split('_')[1]:v
                               for k,v in full_dataset.__dict__.items() if country in k})
 
-    #for any given country, return the list of all available query qns
-    def get_all_answers_df(self):
+    #for any given country, return the list of all available single qn answers
+    def get_all_answers_df(self,qns_to_avoid):
         df=None
         for k,v in self.__dict__.items() :
             if v.qtype=='single':
-              label=v.label
-
-                   if x==0:
-                        print("found an answer which is zero")
-                df = pd.concat([df, v.df.dropna(axis=0)], axis=1)
+                label=v.label
+                if (label not in qns_to_avoid):
+                    for index,x in enumerate(v.df[label]):
+                        #if an answer is nan replace it with -1
+                        if math.isnan(x):
+                            v.df.at[(index+1),label]=-1
+                    df = pd.concat([df, v.df.dropna(axis=0)], axis=1)
         assert df is not None
         return df
 
