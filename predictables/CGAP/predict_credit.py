@@ -27,12 +27,11 @@ bgd = Country_Decoded(COUNTRY,Data)
 
 #some qns are dependant on previous answers. or are just bookkeeping.-avoid them in training
 #todo: do something about qns dependantt on previous answers. eg. A26
-qns_to_avoid=['D19','A26','COUNTRY','Country_Decoded']
+qns_to_avoid=['D19','A26','COUNTRY','Country_Decoded',GOLD]
 df1=bgd.concat_all_single_answer_qns(qns_to_avoid)
 df2=bgd.concat_all_multiple_answer_qns(qns_to_avoid)
+assert len(df1)==len(df2)
 df_combined = pd.concat([df1, df2], axis=1)
-
-
 
 
 #gold_data=Data.col(COUNTRY,GOLD)
@@ -45,7 +44,7 @@ train,test_dev=train_test_split(df_combined,  test_size=0.2)
 test,dev=train_test_split(test_dev,  test_size=0.5)
 
 x_train_gold=np.asarray(train)
-y_train_gold=np.asarray(train[GOLD])
+y_train_gold=np.asarray(Data.col(COUNTRY,GOLD))
 x_dev_gold=np.asarray(dev)
 y_dev_gold=np.asarray(dev[GOLD])
 
