@@ -26,7 +26,7 @@ bgd = Country_Decoded(COUNTRY,Data)
 
 #some qns are dependant on previous answers. or are just bookkeeping.-avoid them in training
 #todo: do something about qns dependantt on previous answers. eg. A26
-qns_to_avoid=['D19','A26','COUNTRY','Country_Decoded']
+qns_to_avoid=['COUNTRY','Country_Decoded']
 df1=bgd.concat_all_single_answer_qns(qns_to_avoid)
 df2=bgd.concat_all_multiple_answer_qns(qns_to_avoid)
 assert len(df1)==len(df2)
