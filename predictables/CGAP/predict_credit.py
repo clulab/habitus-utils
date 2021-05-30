@@ -7,7 +7,7 @@ from CGAP_JSON_Encoders_Decoders import *
 from sklearn.neural_network import MLPClassifier
 from sklearn.metrics import classification_report
 import pandas as pd
-
+from utils import *
 
 COUNTRY='bgd'
 #pick one of the columns as gold label- we are going to make machine predicttt thatt
@@ -27,12 +27,21 @@ bgd = Country_Decoded(COUNTRY,Data)
 
 #some qns are dependant on previous answers. or are just bookkeeping.-avoid them in training
 #todo: do something about qns dependantt on previous answers. eg. A26
-qns_to_avoid=['D19','A26','COUNTRY','Country_Decoded',GOLD]
+qns_to_avoid=['D19','A26','COUNTRY','Country_Decoded']
 df1=bgd.concat_all_single_answer_qns(qns_to_avoid)
 df2=bgd.concat_all_multiple_answer_qns(qns_to_avoid)
 assert len(df1)==len(df2)
 df_combined = pd.concat([df1, df2], axis=1)
+df_combined=df_combined.fillna(-1)
 
+#df_combined=bgd.concat_all_answers(qns_to_avoid)
+#df_combined=df_combined.fillna(-1)
+
+#gold_data=Data.col(COUNTRY,GOLD)
+#assert len(df_combined) == len(gold_data)
+#df_combined = pd.concat([df_combined,gold_data], axis=1)
+
+#df_combined=[checknan(y) for x in df_combined.columns for y in df_combined[x]]
 
 #gold_data=Data.col(COUNTRY,GOLD)
 
@@ -44,9 +53,16 @@ train,test_dev=train_test_split(df_combined,  test_size=0.2)
 test,dev=train_test_split(test_dev,  test_size=0.5)
 
 x_train_gold=np.asarray(train)
-y_train_gold=np.asarray(Data.col(COUNTRY,GOLD))
+y_train_gold=np.asarray(train[GOLD]).reshape(-1, 1)
 x_dev_gold=np.asarray(dev)
 y_dev_gold=np.asarray(dev[GOLD])
+
+
+y_train_gold = [checknan(x) for x in y_train_gold]
+y_dev_gold = [checknan(x) for x in y_dev_gold]
+
+
+
 
 # Create linear regression object
 #model = linear_model.LinearRegression()
@@ -56,21 +72,21 @@ y_dev_gold=np.asarray(dev[GOLD])
 model = MLPClassifier(solver='lbfgs', alpha=1e-5,hidden_layer_sizes=(5, 2), random_state=1)
 
 # Train the model using the training sets
-model.fit(x_train_gold.reshape(-1, 1), y_train_gold)
-y_dev_pred = model.predict(x_dev_gold.reshape(-1, 1))
+model.fit(x_train_gold, y_train_gold)
+y_dev_pred = model.predict(x_dev_gold)
 
 
 print(classification_report(y_dev_gold, y_dev_pred))
 
-
-# Plot outputs
-plt.scatter(x_dev_gold, y_dev_gold, color='black')
-plt.scatter(x_dev_gold, y_dev_pred, color='blue', linewidth=3)
-
-
-
-plt.xlabel("farmers")
-plt.ylabel("Do you currently have any loans.1 yes 2 no")
-plt.xticks(())
-plt.yticks(())
-plt.show()
+#
+# # Plot outputs
+# plt.scatter(x_dev_gold, y_dev_gold, color='black')
+# plt.scatter(x_dev_gold, y_dev_pred, color='blue', linewidth=3)
+#
+#
+#
+# plt.xlabel("farmers")
+# plt.ylabel("Do you currently have any loans.1 yes 2 no")
+# plt.xticks(())
+# plt.yticks(())
+# plt.show()

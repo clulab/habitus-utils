@@ -205,26 +205,38 @@ class Country_Decoded (CGAP_Decoded):
     #for any given country, return the list of all available single qn answers
     def concat_all_single_answer_qns(self, qns_to_avoid):
         df=None
-        for k,v in tqdm(self.__dict__.items(),total=len(self.__dict__.items())) :
+        for k,v in tqdm(self.__dict__.items(),total=len(self.__dict__.items()),desc="single_ans") :
             if v.qtype=='single':
                 label=v.label
+                if(label=="A99"):
+                    print("f")
                 if (label not in qns_to_avoid):
-                    v.df[label] = [checknan(x) for x in v.df[label]]
-                    df = pd.concat([df, v.df], axis=1)
+                    #v.df[label] = [checknan(x) for x in v.df[label]]
+                    df = pd.concat([df, v.df[label]], axis=1)
         assert df is not None
         return df
 
 
 
+    # for any given country, return the list of all available  qn answers
+    def concat_all_answers(self, qns_to_avoid):
+        df = None
+        for k, v in tqdm(self.__dict__.items(), total=len(self.__dict__.items()), desc="all_ans"):
+                label = v.label
+                if (label not in qns_to_avoid):
+                    df = pd.concat([df, v.df[label]], axis=1)
+        assert df is not None
+        return df
+
     # for any given country, return the list of all available single qn answers
     def concat_all_multiple_answer_qns(self, qns_to_avoid):
         df = None
-        for k, v in tqdm(self.__dict__.items(),total=len(self.__dict__.items())) :
+        for k, v in tqdm(self.__dict__.items(),total=len(self.__dict__.items()),desc="multiple_ans"):
             if v.qtype == 'multi':
                 label = v.label
                 if (label not in qns_to_avoid):
                     for sub_qn in (v.df):
-                        v.df[sub_qn] = [checknan(x) for x in v.df[sub_qn]]
+                        #v.df[sub_qn] = [checknan(x) for x in v.df[sub_qn]]
                         df = pd.concat([df, v.df[sub_qn]], axis=1)
         assert df is not None
         return df
