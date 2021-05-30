@@ -24,7 +24,6 @@ x=Data.bgd_A1
 countries = ['bgd','cdi','moz','nga','tan','uga']
 bgd = Country_Decoded(COUNTRY,Data)
 
-
 #some qns are dependant on previous answers. or are just bookkeeping.-avoid them in training
 #todo: do something about qns dependantt on previous answers. eg. A26
 qns_to_avoid=['D19','A26','COUNTRY','Country_Decoded']
@@ -34,17 +33,8 @@ assert len(df1)==len(df2)
 df_combined = pd.concat([df1, df2], axis=1)
 df_combined=df_combined.fillna(-1)
 
-
-
-
-
-
-
-
-#all_rows=df_combined.dropna()
 train,test_dev=train_test_split(df_combined,  test_size=0.2)
 test,dev=train_test_split(test_dev,  test_size=0.5)
-
 
 y_train_gold=np.asarray(train[GOLD]).reshape(-1, 1)
 train.drop(GOLD,inplace=True,axis=1)
@@ -54,18 +44,6 @@ y_dev_gold=np.asarray(dev[GOLD])
 dev.drop(GOLD,inplace=True,axis=1)
 x_dev_gold=np.asarray(dev)
 
-
-
-#y_train_gold = [checknan(x) for x in y_train_gold]
-#y_dev_gold = [checknan(x) for x in y_dev_gold]
-
-
-
-
-# Create linear regression object
-#model = linear_model.LinearRegression()
-
-
 #MLP
 model = MLPClassifier(solver='lbfgs', alpha=1e-5,hidden_layer_sizes=(5, 2), random_state=1)
 
@@ -73,16 +51,12 @@ model = MLPClassifier(solver='lbfgs', alpha=1e-5,hidden_layer_sizes=(5, 2), rand
 model.fit(x_train_gold, y_train_gold)
 y_dev_pred = model.predict(x_dev_gold)
 
-
 print(classification_report(y_dev_gold, y_dev_pred))
 
 #
 # # Plot outputs
 # plt.scatter(x_dev_gold, y_dev_gold, color='black')
 # plt.scatter(x_dev_gold, y_dev_pred, color='blue', linewidth=3)
-#
-#
-#
 # plt.xlabel("farmers")
 # plt.ylabel("Do you currently have any loans.1 yes 2 no")
 # plt.xticks(())
