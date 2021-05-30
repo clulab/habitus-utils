@@ -12,7 +12,7 @@ import os, json
 import numpy as np
 import pandas as pd
 import math
-
+from tqdm import tqdm
 class Question_Encoder ():
     """
     Irrespective of question type, self.text is the text of the question
@@ -204,35 +204,52 @@ class Country_Decoded (CGAP_Decoded):
     #for any given country, return the list of all available single qn answers
     def concat_all_single_answer_qns(self, qns_to_avoid):
         df=None
-        for k,v in self.__dict__.items() :
+        for k,v in tqdm(self.__dict__.items(),total=len(self.__dict__.items())) :
             if v.qtype=='single':
                 label=v.label
-                for index,x in enumerate(v.df[label]):
-                    if (label not in qns_to_avoid):
-                        if index>225:
-                            print("found")
+                if (label not in qns_to_avoid):
+                    assert len(v.df[label].index) == len(v.df[label])
+                    for index,value in zip(v.df[label].index,v.df[label]):
                         #if an answer is nan replace it with -1
-                        if math.isnan(x):
-                            v.df.at[(index+1),label]=-1
-                    df = pd.concat([df, v.df.dropna(axis=0)], axis=1)
+                        if math.isnan(value):
+                            v.df.at[(index),label]=-1
+                        df = pd.concat([df, v.df], axis=1)
+        assert df is not None
+        return df
+
+        # for any given country, return the list of all available single qn answers
+
+    def concat_all_multiple_answer_qns(self, qns_to_avoid):
+        df = None
+        for k, v in self.__dict__.items():
+            if v.qtype == 'multi':
+                label = v.label
+                if (label not in qns_to_avoid):
+                    for sub_qn in (v.df):
+                        assert len(v.df[sub_qn].index) == len(v.df[sub_qn])
+                        for index, value in zip(v.df[sub_qn].index, v.df[sub_qn]):
+                            # if an answer is nan replace it with -1
+                            if math.isnan(value):
+                                v.df.at[(index), sub_qn] = -1
+                            df = pd.concat([df, v.df], axis=1)
         assert df is not None
         return df
 
 
-    def concat_all_multiple_answer_qns(self, qns_to_avoid):
-            df=None
-            for k,v in self.__dict__.items() :
-                if v.qtype=='multi':
-                    label=v.label
-                    if (label not in qns_to_avoid):
-                          for sub_qn in (v.df):
-                              for index2,y in enumerate(v.df[sub_qn]):
-                                #if a value is nan replace it with -1
-                                if math.isnan(y):
-                                  v.df.at[(index2+1),sub_qn]=-1
-                          df = pd.concat([df, v.df.dropna(axis=0)], axis=1)
-            assert df is not None
-            return df
+    # def concat_all_multiple_answer_qns(self, qns_to_avoid):
+    #         df=None
+    #         for k,v in self.__dict__.items() :
+    #             if v.qtype=='multi':
+    #                 label=v.label
+    #                 if (label not in qns_to_avoid):
+    #                       for sub_qn in (v.df):
+    #                           for index2,y in enumerate(v.df[sub_qn]):
+    #                             #if a value is nan replace it with -1
+    #                             if math.isnan(y):
+    #                               v.df.at[(index2+1),sub_qn]=-1
+    #                       df = pd.concat([df, v.df.dropna(axis=0)], axis=1)
+    #         assert df is not None
+    #         return df
 
 
 

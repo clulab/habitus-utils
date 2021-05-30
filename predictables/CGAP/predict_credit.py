@@ -19,6 +19,8 @@ GOLD="F58"
 sys.path.append('/Users/mordor/research/habitus_project/mycode/predictables/Data/Data Objects/Code and Notebooks')
 Data = CGAP_Decoded()
 Data.read_and_decode('/Users/mordor/research/habitus_project/mycode/predictables/Data/Data Objects/CGAP_JSON.txt')
+
+x=Data.bgd_A1
 countries = ['bgd','cdi','moz','nga','tan','uga']
 bgd = Country_Decoded(COUNTRY,Data)
 
