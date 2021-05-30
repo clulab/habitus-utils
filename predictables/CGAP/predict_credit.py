@@ -34,16 +34,9 @@ assert len(df1)==len(df2)
 df_combined = pd.concat([df1, df2], axis=1)
 df_combined=df_combined.fillna(-1)
 
-#df_combined=bgd.concat_all_answers(qns_to_avoid)
-#df_combined=df_combined.fillna(-1)
 
-#gold_data=Data.col(COUNTRY,GOLD)
-#assert len(df_combined) == len(gold_data)
-#df_combined = pd.concat([df_combined,gold_data], axis=1)
 
-#df_combined=[checknan(y) for x in df_combined.columns for y in df_combined[x]]
 
-#gold_data=Data.col(COUNTRY,GOLD)
 
 
 
@@ -52,14 +45,19 @@ df_combined=df_combined.fillna(-1)
 train,test_dev=train_test_split(df_combined,  test_size=0.2)
 test,dev=train_test_split(test_dev,  test_size=0.5)
 
-x_train_gold=np.asarray(train)
+
 y_train_gold=np.asarray(train[GOLD]).reshape(-1, 1)
-x_dev_gold=np.asarray(dev)
+train.drop(GOLD,inplace=True,axis=1)
+x_train_gold=np.asarray(train)
+
 y_dev_gold=np.asarray(dev[GOLD])
+dev.drop(GOLD,inplace=True,axis=1)
+x_dev_gold=np.asarray(dev)
 
 
-y_train_gold = [checknan(x) for x in y_train_gold]
-y_dev_gold = [checknan(x) for x in y_dev_gold]
+
+#y_train_gold = [checknan(x) for x in y_train_gold]
+#y_dev_gold = [checknan(x) for x in y_dev_gold]
 
 
 
