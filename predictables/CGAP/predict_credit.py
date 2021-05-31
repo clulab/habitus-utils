@@ -1,13 +1,15 @@
 import numpy as np
 import sys
 from sklearn.model_selection import train_test_split
-from sklearn import  linear_model
+from sklearn import  linear_model,svm,neighbors, tree
 import matplotlib.pyplot as plt
 from CGAP_JSON_Encoders_Decoders import *
 from sklearn.neural_network import MLPClassifier
+from sklearn.linear_model import Perceptron,LogisticRegression
 from sklearn.metrics import classification_report
 import pandas as pd
 from utils import *
+from sklearn.ensemble import RandomForestClassifier
 
 COUNTRY='bgd'
 #pick one of the columns as gold label- we are going to make machine predicttt thatt
@@ -45,7 +47,14 @@ dev.drop(GOLD,inplace=True,axis=1)
 x_dev_gold=np.asarray(dev)
 
 #MLP
-model = MLPClassifier(solver='lbfgs', alpha=1e-5,hidden_layer_sizes=(5, 2), random_state=1)
+#model = MLPClassifier(solver='lbfgs', alpha=1e-5,hidden_layer_sizes=(5, 2), random_state=1)
+#model = Perceptron(tol=1e-3, random_state=0)
+#model = LogisticRegression()
+#model = svm.SVC()
+#model=neighbors.KNeighborsClassifier()
+model = tree.DecisionTreeClassifier()
+#model = RandomForestClassifier(n_estimators=10)
+
 
 # Train the model using the training sets
 model.fit(x_train_gold, y_train_gold)

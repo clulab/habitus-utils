@@ -13,6 +13,8 @@ import numpy as np
 import pandas as pd
 import math
 from tqdm import tqdm
+
+
 class Question_Encoder ():
     """
     Irrespective of question type, self.text is the text of the question
