@@ -216,11 +216,23 @@ class Country_Decoded (CGAP_Decoded):
         assert df is not None
         return df
 
-
     # for any given country, return the list of all available single qn answers
+    def concat_all_single_answer_qns_to_add(self, qns_to_add):
+            df = None
+            for k, v in tqdm(self.__dict__.items(), total=len(self.__dict__.items()), desc="single_ans"):
+                if v.qtype == 'single':
+                    label = v.label
+                    if (label in qns_to_add):
+                        v_df_scaled = scale_min_max(v.df[label])
+                        df = pd.concat([df, v_df_scaled], axis=1)
+            assert df is not None
+            return df
+
+            # for any given country, return the list of all available single qn answers
+
     def concat_all_multiple_answer_qns(self, qns_to_avoid):
         df = None
-        for k, v in tqdm(self.__dict__.items(),total=len(self.__dict__.items()),desc="multiple_ans"):
+        for k, v in tqdm(self.__dict__.items(), total=len(self.__dict__.items()), desc="multiple_ans"):
             if v.qtype == 'multi':
                 label = v.label
                 if (label not in qns_to_avoid):
@@ -228,6 +240,20 @@ class Country_Decoded (CGAP_Decoded):
                         v_df_scaled = scale_min_max(v.df[sub_qn])
                         df = pd.concat([df, v_df_scaled], axis=1)
         assert df is not None
+        return df
+
+    # for any given country, return the list of all available single qn answers
+    def concat_all_multiple_answer_qns_to_add(self, qns_to_add):
+        df = None
+        for k, v in tqdm(self.__dict__.items(), total=len(self.__dict__.items()), desc="multiple_ans"):
+            if v.qtype == 'multi':
+                label = v.label
+                if "F" in label:
+                    print("f")
+                if (label in qns_to_add):
+                    for sub_qn in (v.df):
+                        v_df_scaled = scale_min_max(v.df[sub_qn])
+                        df = pd.concat([df, v_df_scaled], axis=1)
         return df
 
 
