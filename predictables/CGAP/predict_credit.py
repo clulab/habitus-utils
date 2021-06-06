@@ -10,7 +10,11 @@ from sklearn.metrics import classification_report
 import pandas as pd
 from utils import *
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import SGDClassifier
+from sklearn.naive_bayes import GaussianNB,CategoricalNB
 import random
+from sklearn.ensemble import GradientBoostingClassifier
+from sklearn.metrics import confusion_matrix
 
 COUNTRY='bgd'
 GOLD="F58"
@@ -60,13 +64,16 @@ dev.drop(GOLD,inplace=True,axis=1)
 x_dev_gold=np.asarray(dev)
 
 #MLP
-model = MLPClassifier(solver='lbfgs', alpha=1e-5,hidden_layer_sizes=(5, 2), random_state=1)
+#model = MLPClassifier(solver='lbfgs', alpha=1e-5,hidden_layer_sizes=(5, 2), random_state=1)
 #model=neighbors.KNeighborsClassifier()
 #model = LogisticRegression()
 #model = tree.DecisionTreeClassifier()
 #model = RandomForestClassifier(n_estimators=10)
-# #model = Perceptron(tol=1e-3, random_state=0)
-#model = svm.SVC()
+#model = Perceptron(tol=1e-3, random_state=0)
+model = svm.SVC()
+#model = SGDClassifier(loss="hinge", penalty="l2", max_iter=5)
+#model = GaussianNB()
+#model = GradientBoostingClassifier(n_estimators=100, learning_rate=1.0,max_depth=1, random_state=0)
 
 
 
@@ -74,7 +81,20 @@ model = MLPClassifier(solver='lbfgs', alpha=1e-5,hidden_layer_sizes=(5, 2), rand
 model.fit(x_train_gold, y_train_gold)
 y_dev_pred = model.predict(x_dev_gold)
 
+print("\n")
+print(f"****Classification Report when using {type(model).__name__}*** for COUNTRY={COUNTRY} and question to predict={GOLD}")
 print(classification_report(y_dev_gold, y_dev_pred))
+print("\n")
+print("****Confusion Matrix***")
+labels_in=[0,1]
+print(f"yes\tno")
+
+cm=confusion_matrix(y_dev_gold, y_dev_pred,labels=labels_in)
+print(cm)
+print("\n")
+print("****True Positive etc***")
+print('(tn, fp, fn, tp)')
+print(cm.ravel())
 
 #
 # # Plot outputs
