@@ -10,21 +10,27 @@ from sklearn.metrics import classification_report
 import pandas as pd
 from utils import *
 from sklearn.ensemble import RandomForestClassifier
+import random
 
 COUNTRY='bgd'
 GOLD="F58"
+RANDOM_SEED=3252
 
 
+random.seed(RANDOM_SEED)
+np.random.seed(RANDOM_SEED)
+
+all_countries = ['bgd','cdi','moz','nga','tan','uga']
 
 sys.path.append('/Users/mordor/research/habitus_project/mycode/predictables/Data/Data Objects/Code and Notebooks')
 Data = CGAP_Decoded()
 Data.read_and_decode('/Users/mordor/research/habitus_project/mycode/predictables/Data/Data Objects/CGAP_JSON.txt')
 
 x=Data.bgd_A1
-countries = ['bgd','cdi','moz','nga','tan','uga']
+
 bgd = Country_Decoded(COUNTRY,Data)
 
-#some qns are dependant on previous answers. or are just bookkeeping.-avoid them in training
+#get all data for the given country. then split it into train, dev, split
 # qns_to_avoid=['COUNTRY','Country_Decoded']
 # df1=bgd.concat_all_single_answer_qns(qns_to_avoid)
 # df2=bgd.concat_all_multiple_answer_qns(qns_to_avoid)
@@ -40,8 +46,10 @@ df_combined = pd.concat([df1, df2], axis=1)
 df_combined=df_combined.fillna(-1)
 
 
-train,test_dev=train_test_split(df_combined,  test_size=0.2)
-test,dev=train_test_split(test_dev,  test_size=0.5)
+train,test_dev=train_test_split(df_combined,  test_size=0.2,shuffle=True)
+test,dev=train_test_split(test_dev,  test_size=0.5,shuffle=True)
+
+
 
 y_train_gold=np.asarray(train[GOLD]).reshape(-1, 1)
 train.drop(GOLD,inplace=True,axis=1)
@@ -52,13 +60,14 @@ dev.drop(GOLD,inplace=True,axis=1)
 x_dev_gold=np.asarray(dev)
 
 #MLP
-#model = MLPClassifier(solver='lbfgs', alpha=1e-5,hidden_layer_sizes=(5, 2), random_state=1)
-#model = Perceptron(tol=1e-3, random_state=0)
-#model = LogisticRegression()
-model = svm.SVC()
+model = MLPClassifier(solver='lbfgs', alpha=1e-5,hidden_layer_sizes=(5, 2), random_state=1)
 #model=neighbors.KNeighborsClassifier()
+#model = LogisticRegression()
 #model = tree.DecisionTreeClassifier()
 #model = RandomForestClassifier(n_estimators=10)
+# #model = Perceptron(tol=1e-3, random_state=0)
+#model = svm.SVC()
+
 
 
 # Train the model using the training sets

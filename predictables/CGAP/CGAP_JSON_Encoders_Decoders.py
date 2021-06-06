@@ -192,7 +192,30 @@ class CGAP_Decoded (SimpleNamespace):
         df=df.join([self.col_from_countries(var, countries) for var in vars],how='outer')
         return df
 
+    #for all countries concatenate answers for all single answer queries
+    def concat_all_single_answer_qns(self, qns_to_avoid):
+        df=None
+        for k,v in tqdm(self.__dict__.items(),total=len(self.__dict__.items()),desc="single_ans") :
+            if v.qtype=='single':
+                label=v.label
+                if (label not in qns_to_avoid):
+                    v_df_scaled=scale_min_max(v.df[label])
+                    df = pd.concat([df, v_df_scaled], axis=1)
+        assert df is not None
+        return df
 
+    # for all countries concatenate answers for all single answer queries
+    def concat_all_multiple_answer_qns(self, qns_to_avoid):
+            df = None
+            for k, v in tqdm(self.__dict__.items(), total=len(self.__dict__.items()), desc="multiple_ans"):
+                if v.qtype == 'multi' or v.qtype == "multiple":
+                    label = v.label
+                    if (label not in qns_to_avoid):
+                        for sub_qn in (v.df):
+                            v_df_scaled = scale_min_max(v.df[sub_qn])
+                            df = pd.concat([df, v_df_scaled], axis=1)
+            assert df is not None
+            return df
 class Country_Decoded (CGAP_Decoded):
     """ This is a country-specific version of CGAP_Decoded. We create one instance per
     country. For now, we do it by first creating an instance of CGAP_Decoded for the
@@ -233,7 +256,7 @@ class Country_Decoded (CGAP_Decoded):
     def concat_all_multiple_answer_qns(self, qns_to_avoid):
         df = None
         for k, v in tqdm(self.__dict__.items(), total=len(self.__dict__.items()), desc="multiple_ans"):
-            if v.qtype == 'multi':
+            if v.qtype == 'multi' or v.qtype == "multiple":
                 label = v.label
                 if (label not in qns_to_avoid):
                     for sub_qn in (v.df):
@@ -242,14 +265,12 @@ class Country_Decoded (CGAP_Decoded):
         assert df is not None
         return df
 
-    # for any given country, return the list of all available single qn answers
+    # for any given country, return the list of all available multiple qn answers-provided you are given list of qns to add
     def concat_all_multiple_answer_qns_to_add(self, qns_to_add):
         df = None
         for k, v in tqdm(self.__dict__.items(), total=len(self.__dict__.items()), desc="multiple_ans"):
-            if v.qtype == 'multi':
+            if v.qtype == 'multi' or v.qtype=="multiple":
                 label = v.label
-                if "F" in label:
-                    print("f")
                 if (label in qns_to_add):
                     for sub_qn in (v.df):
                         v_df_scaled = scale_min_max(v.df[sub_qn])
