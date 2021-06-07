@@ -8,11 +8,13 @@ Created on Mon Apr 26 11:38:19 2021
 
 from types import SimpleNamespace
 import os, json
-
+from utils import *
 import numpy as np
 import pandas as pd
 import math
 from tqdm import tqdm
+
+
 class Question_Encoder ():
     """
     Irrespective of question type, self.text is the text of the question
@@ -190,7 +192,30 @@ class CGAP_Decoded (SimpleNamespace):
         df=df.join([self.col_from_countries(var, countries) for var in vars],how='outer')
         return df
 
+    #for all countries concatenate answers for all single answer queries
+    def concat_all_single_answer_qns(self, qns_to_avoid):
+        df=None
+        for k,v in tqdm(self.__dict__.items(),total=len(self.__dict__.items()),desc="single_ans") :
+            if v.qtype=='single':
+                label=v.label
+                if (label not in qns_to_avoid):
+                    v_df_scaled=scale_min_max(v.df[label])
+                    df = pd.concat([df, v_df_scaled], axis=1)
+        assert df is not None
+        return df
 
+    # for all countries concatenate answers for all single answer queries
+    def concat_all_multiple_answer_qns(self, qns_to_avoid):
+            df = None
+            for k, v in tqdm(self.__dict__.items(), total=len(self.__dict__.items()), desc="multiple_ans"):
+                if v.qtype == 'multi' or v.qtype == "multiple":
+                    label = v.label
+                    if (label not in qns_to_avoid):
+                        for sub_qn in (v.df):
+                            v_df_scaled = scale_min_max(v.df[sub_qn])
+                            df = pd.concat([df, v_df_scaled], axis=1)
+            assert df is not None
+            return df
 class Country_Decoded (CGAP_Decoded):
     """ This is a country-specific version of CGAP_Decoded. We create one instance per
     country. For now, we do it by first creating an instance of CGAP_Decoded for the
@@ -201,55 +226,55 @@ class Country_Decoded (CGAP_Decoded):
         self.__dict__.update({k.split('_')[1]:v
                               for k,v in full_dataset.__dict__.items() if country in k})
 
+
     #for any given country, return the list of all available single qn answers
     def concat_all_single_answer_qns(self, qns_to_avoid):
         df=None
-        for k,v in tqdm(self.__dict__.items(),total=len(self.__dict__.items())) :
+        for k,v in tqdm(self.__dict__.items(),total=len(self.__dict__.items()),desc="single_ans") :
             if v.qtype=='single':
                 label=v.label
                 if (label not in qns_to_avoid):
-                    assert len(v.df[label].index) == len(v.df[label])
-                    for index,value in zip(v.df[label].index,v.df[label]):
-                        #if an answer is nan replace it with -1
-                        if math.isnan(value):
-                            v.df.at[(index),label]=-1
-                        df = pd.concat([df, v.df], axis=1)
+                    v_df_scaled=scale_min_max(v.df[label])
+                    df = pd.concat([df, v_df_scaled], axis=1)
         assert df is not None
         return df
 
-        # for any given country, return the list of all available single qn answers
+    # for any given country, return the list of all available single qn answers
+    def concat_all_single_answer_qns_to_add(self, qns_to_add):
+            df = None
+            for k, v in tqdm(self.__dict__.items(), total=len(self.__dict__.items()), desc="single_ans"):
+                if v.qtype == 'single':
+                    label = v.label
+                    if (label in qns_to_add):
+                        v_df_scaled = scale_min_max(v.df[label])
+                        df = pd.concat([df, v_df_scaled], axis=1)
+            assert df is not None
+            return df
+
+            # for any given country, return the list of all available single qn answers
 
     def concat_all_multiple_answer_qns(self, qns_to_avoid):
         df = None
-        for k, v in self.__dict__.items():
-            if v.qtype == 'multi':
+        for k, v in tqdm(self.__dict__.items(), total=len(self.__dict__.items()), desc="multiple_ans"):
+            if v.qtype == 'multi' or v.qtype == "multiple":
                 label = v.label
                 if (label not in qns_to_avoid):
                     for sub_qn in (v.df):
-                        assert len(v.df[sub_qn].index) == len(v.df[sub_qn])
-                        for index, value in zip(v.df[sub_qn].index, v.df[sub_qn]):
-                            # if an answer is nan replace it with -1
-                            if math.isnan(value):
-                                v.df.at[(index), sub_qn] = -1
-                            df = pd.concat([df, v.df], axis=1)
+                        v_df_scaled = scale_min_max(v.df[sub_qn])
+                        df = pd.concat([df, v_df_scaled], axis=1)
         assert df is not None
         return df
 
-
-    # def concat_all_multiple_answer_qns(self, qns_to_avoid):
-    #         df=None
-    #         for k,v in self.__dict__.items() :
-    #             if v.qtype=='multi':
-    #                 label=v.label
-    #                 if (label not in qns_to_avoid):
-    #                       for sub_qn in (v.df):
-    #                           for index2,y in enumerate(v.df[sub_qn]):
-    #                             #if a value is nan replace it with -1
-    #                             if math.isnan(y):
-    #                               v.df.at[(index2+1),sub_qn]=-1
-    #                       df = pd.concat([df, v.df.dropna(axis=0)], axis=1)
-    #         assert df is not None
-    #         return df
-
+    # for any given country, return the list of all available multiple qn answers-provided you are given list of qns to add
+    def concat_all_multiple_answer_qns_to_add(self, qns_to_add):
+        df = None
+        for k, v in tqdm(self.__dict__.items(), total=len(self.__dict__.items()), desc="multiple_ans"):
+            if v.qtype == 'multi' or v.qtype=="multiple":
+                label = v.label
+                if (label in qns_to_add):
+                    for sub_qn in (v.df):
+                        v_df_scaled = scale_min_max(v.df[sub_qn])
+                        df = pd.concat([df, v_df_scaled], axis=1)
+        return df
 
 
