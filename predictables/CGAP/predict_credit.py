@@ -16,10 +16,15 @@ import random
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.metrics import confusion_matrix
 from sklearn.feature_selection import SelectKBest
-from sklearn.feature_selection import chi2
+from sklearn.feature_selection import chi2,f_classif,mutual_info_classif,SelectPercentile
+from sklearn.metrics import accuracy_score
+
+
+
 COUNTRY='bgd'
 GOLD="F58"
 RANDOM_SEED=3252
+K_FEATURE_SELECTION=26
 
 
 random.seed(RANDOM_SEED)
@@ -36,19 +41,19 @@ x=Data.bgd_A1
 bgd = Country_Decoded(COUNTRY,Data)
 
 #get all data for the given country. then split it into train, dev, split
-# qns_to_avoid=['COUNTRY','Country_Decoded']
-# df1=bgd.concat_all_single_answer_qns(qns_to_avoid)
-# df2=bgd.concat_all_multiple_answer_qns(qns_to_avoid)
-# assert len(df1)==len(df2)
-# df_combined = pd.concat([df1, df2], axis=1)
-# df_combined=df_combined.fillna(-1)
-
-
-qns_to_add=['F53','F54','F55','F56','F58']
-df1=bgd.concat_all_single_answer_qns_to_add(qns_to_add)
-df2=bgd.concat_all_multiple_answer_qns_to_add(qns_to_add)
+qns_to_avoid=['COUNTRY','Country_Decoded']
+df1=bgd.concat_all_single_answer_qns(qns_to_avoid)
+df2=bgd.concat_all_multiple_answer_qns(qns_to_avoid)
+assert len(df1)==len(df2)
 df_combined = pd.concat([df1, df2], axis=1)
-df_combined=df_combined.fillna(9999)
+df_combined=df_combined.fillna(-1)
+
+#
+# qns_to_add=['F53','F54','F55','F56','F58']
+# df1=bgd.concat_all_single_answer_qns_to_add(qns_to_add)
+# df2=bgd.concat_all_multiple_answer_qns_to_add(qns_to_add)
+# df_combined = pd.concat([df1, df2], axis=1)
+# df_combined=df_combined.fillna(9999)
 
 
 
@@ -60,17 +65,27 @@ test,dev=train_test_split(test_dev,  test_size=0.5,shuffle=True)
 
 y_train_gold=np.asarray(train[GOLD]).reshape(-1, 1)
 train.drop(GOLD,inplace=True,axis=1)
-x_train_gold=np.asarray(train)
+x_train=train
+
 
 
 
 y_dev_gold=np.asarray(dev[GOLD])
 dev.drop(GOLD,inplace=True,axis=1)
-x_dev_gold=np.asarray(dev)
+x_dev=dev
 
 
-x_train_gold = SelectKBest(chi2, k=2).fit_transform(x_train_gold, y_train_gold)
-x_dev_gold = SelectKBest(chi2, k=2).fit_transform(x_dev_gold, y_dev_gold)
+# x_train = SelectKBest(mutual_info_classif, k=K_FEATURE_SELECTION).fit_transform(x_train, y_train_gold)
+# x_dev = SelectKBest(mutual_info_classif, k=K_FEATURE_SELECTION).fit_transform(x_dev, y_dev_gold)
+
+
+
+x_train = SelectPercentile(chi2, percentile=K_FEATURE_SELECTION).fit_transform(x_train, y_train_gold)
+x_dev = SelectPercentile(chi2, percentile=K_FEATURE_SELECTION).fit_transform(x_dev, y_dev_gold)
+
+
+x_dev=np.asarray(x_dev)
+x_train=np.asarray(x_train)
 
 #MLP
 #model = MLPClassifier(solver='lbfgs', alpha=1e-5,hidden_layer_sizes=(5, 2), random_state=1)
@@ -88,8 +103,8 @@ x_dev_gold = SelectKBest(chi2, k=2).fit_transform(x_dev_gold, y_dev_gold)
 model = svm.SVC()
 #rfe.fit(X, y)
 # Train the model using the training sets
-model.fit(x_train_gold, y_train_gold)
-y_dev_pred = model.predict(x_dev_gold)
+model.fit(x_train, y_train_gold)
+y_dev_pred = model.predict(x_dev)
 
 print("\n")
 print(f"****Classification Report when using {type(model).__name__}*** for COUNTRY={COUNTRY} and question to predict={GOLD}")
@@ -105,7 +120,7 @@ print("\n")
 print("****True Positive etc***")
 print('(tn, fp, fn, tp)')
 print(cm.ravel())
-
+print(accuracy_score(y_dev_gold, y_dev_pred))
 #
 # # Plot outputs
 # plt.scatter(x_dev_gold, y_dev_gold, color='black')
