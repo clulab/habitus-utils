@@ -18,19 +18,51 @@ from sklearn.metrics import confusion_matrix
 from sklearn.feature_selection import SelectKBest
 from sklearn.feature_selection import chi2,f_classif,mutual_info_classif,SelectPercentile
 from sklearn.metrics import accuracy_score
-
+import git,logging
 
 
 COUNTRY='bgd'
 GOLD="F58"
 RANDOM_SEED=3252
 TOTAL_FEATURE_COUNT=27
+FEATURE_SELECTION_ALGOS=["SelectKBest"]
 
 
 random.seed(RANDOM_SEED)
 np.random.seed(RANDOM_SEED)
 
 all_countries = ['bgd','cdi','moz','nga','tan','uga']
+
+logger = logging.getLogger(__name__)
+def get_git_info():
+    repo = git.Repo(search_parent_directories=True)
+
+    repo_sha=str(repo.head.object.hexsha),
+    repo_short_sha= str(repo.git.rev_parse(repo_sha, short=6))
+
+    repo_infos = {
+        "repo_id": str(repo),
+        "repo_sha": str(repo.head.object.hexsha),
+        "repo_branch": str(repo.active_branch),
+        "repo_short_sha" :repo_short_sha
+    }
+    return repo_infos
+
+git_details=get_git_info()
+log_file_name=git_details['repo_short_sha']+".log"
+logging.basicConfig(
+    format="%(asctime)s - %(levelname)s - %(name)s -   %(message)s",
+    datefmt="%m/%d/%Y %H:%M:%S",
+    level=logging.DEBUG ,
+    filename=log_file_name,
+    filemode='w'
+)
+logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
+
+
+
+
+
 
 sys.path.append('/Users/mordor/research/habitus_project/mycode/predictables/Data/Data Objects/Code and Notebooks')
 Data = CGAP_Decoded()
@@ -76,13 +108,13 @@ dev.drop(GOLD,inplace=True,axis=1)
 
 feature_accuracy={}
 for feature_count in range(1, TOTAL_FEATURE_COUNT):
-    x_train_selected = SelectKBest(mutual_info_classif, k=feature_count).fit_transform(train, y_train_gold)
-    x_dev_selected = SelectKBest(mutual_info_classif, k=feature_count).fit_transform(dev, y_dev_gold)
+    # x_train_selected = SelectKBest(mutual_info_classif, k=feature_count).fit_transform(train, y_train_gold)
+    # x_dev_selected = SelectKBest(mutual_info_classif, k=feature_count).fit_transform(dev, y_dev_gold)
+    #
 
 
-
-    #x_train = SelectPercentile(chi2, percentile=K_FEATURE_SELECTION).fit_transform(x_train, y_train_gold)
-    #x_dev = SelectPercentile(chi2, percentile=K_FEATURE_SELECTION).fit_transform(x_dev, y_dev_gold)
+    x_train_selected = SelectPercentile(mutual_info_classif, percentile=feature_count).fit_transform(train, y_train_gold)
+    x_dev_selected = SelectPercentile(mutual_info_classif, percentile=feature_count).fit_transform(dev, y_dev_gold)
 
 
     x_dev_selected=np.asarray(x_dev_selected)
@@ -107,30 +139,23 @@ for feature_count in range(1, TOTAL_FEATURE_COUNT):
     model.fit(x_train_selected, y_train_gold)
     y_dev_pred = model.predict(x_dev_selected)
 
-    # print("\n")
-    # print(f"****Classification Report when using {type(model).__name__}*** for COUNTRY={COUNTRY} and question to predict={GOLD}")
-    # print(classification_report(y_dev_gold, y_dev_pred))
-    # print("\n")
-    # print("****Confusion Matrix***")
-    # labels_in=[0,1]
-    # print(f"yes\tno")
-    #
-    # cm=confusion_matrix(y_dev_gold, y_dev_pred,labels=labels_in)
-    # print(cm)
-    # print("\n")
-    # print("****True Positive etc***")
-    # print('(tn, fp, fn, tp)')
-    # print(cm.ravel())
+    logger.debug("\n")
+    logger.debug(f"****Classification Report when using {type(model).__name__}*** for COUNTRY={COUNTRY} and question to predict={GOLD}")
+    logger.debug(classification_report(y_dev_gold, y_dev_pred))
+    logger.debug("\n")
+    logger.debug("****Confusion Matrix***")
+    labels_in=[0,1]
+    logger.debug(f"yes\tno")
+
+    cm=confusion_matrix(y_dev_gold, y_dev_pred,labels=labels_in)
+    logger.debug(cm)
+    logger.debug("\n")
+    logger.debug("****True Positive etc***")
+    logger.debug('(tn, fp, fn, tp)')
+    logger.debug(cm.ravel())
+
+
     acc=accuracy_score(y_dev_gold, y_dev_pred)
     feature_accuracy[feature_count]=acc
 for k,v in (feature_accuracy.items()):
-    print(k,v)
-    print("\n")
-# # Plot outputs
-# plt.scatter(x_dev_gold, y_dev_gold, color='black')
-# plt.scatter(x_dev_gold, y_dev_pred, color='blue', linewidth=3)
-# plt.xlabel("farmers")
-# plt.ylabel("Do you currently have any loans.1 yes 2 no")
-# plt.xticks(())
-# plt.yticks(())
-# plt.show()
+    logger.info(f"{k}\t{v}")
