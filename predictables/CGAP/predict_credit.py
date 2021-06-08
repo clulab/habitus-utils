@@ -36,10 +36,8 @@ all_countries = ['bgd','cdi','moz','nga','tan','uga']
 logger = logging.getLogger(__name__)
 def get_git_info():
     repo = git.Repo(search_parent_directories=True)
-
     repo_sha=str(repo.head.object.hexsha),
     repo_short_sha= str(repo.git.rev_parse(repo_sha, short=6))
-
     repo_infos = {
         "repo_id": str(repo),
         "repo_sha": str(repo.head.object.hexsha),
@@ -110,12 +108,9 @@ feature_accuracy={}
 for feature_count in range(1, TOTAL_FEATURE_COUNT):
     # x_train_selected = SelectKBest(mutual_info_classif, k=feature_count).fit_transform(train, y_train_gold)
     # x_dev_selected = SelectKBest(mutual_info_classif, k=feature_count).fit_transform(dev, y_dev_gold)
-    #
-
 
     x_train_selected = SelectPercentile(mutual_info_classif, percentile=feature_count).fit_transform(train, y_train_gold)
     x_dev_selected = SelectPercentile(mutual_info_classif, percentile=feature_count).fit_transform(dev, y_dev_gold)
-
 
     x_dev_selected=np.asarray(x_dev_selected)
     x_train_selected=np.asarray(x_train_selected)
