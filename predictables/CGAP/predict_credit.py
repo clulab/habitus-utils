@@ -24,7 +24,7 @@ from sklearn.metrics import accuracy_score
 COUNTRY='bgd'
 GOLD="F58"
 RANDOM_SEED=3252
-K_FEATURE_SELECTION=26
+TOTAL_FEATURE_COUNT=27
 
 
 random.seed(RANDOM_SEED)
@@ -65,63 +65,67 @@ test,dev=train_test_split(test_dev,  test_size=0.5,shuffle=True)
 
 y_train_gold=np.asarray(train[GOLD]).reshape(-1, 1)
 train.drop(GOLD,inplace=True,axis=1)
-x_train=train
+
 
 
 
 
 y_dev_gold=np.asarray(dev[GOLD])
 dev.drop(GOLD,inplace=True,axis=1)
-x_dev=dev
 
 
-# x_train = SelectKBest(mutual_info_classif, k=K_FEATURE_SELECTION).fit_transform(x_train, y_train_gold)
-# x_dev = SelectKBest(mutual_info_classif, k=K_FEATURE_SELECTION).fit_transform(x_dev, y_dev_gold)
+feature_accuracy={}
+for feature_count in range(1, TOTAL_FEATURE_COUNT):
+    x_train_selected = SelectKBest(mutual_info_classif, k=feature_count).fit_transform(train, y_train_gold)
+    x_dev_selected = SelectKBest(mutual_info_classif, k=feature_count).fit_transform(dev, y_dev_gold)
 
 
 
-x_train = SelectPercentile(chi2, percentile=K_FEATURE_SELECTION).fit_transform(x_train, y_train_gold)
-x_dev = SelectPercentile(chi2, percentile=K_FEATURE_SELECTION).fit_transform(x_dev, y_dev_gold)
+    #x_train = SelectPercentile(chi2, percentile=K_FEATURE_SELECTION).fit_transform(x_train, y_train_gold)
+    #x_dev = SelectPercentile(chi2, percentile=K_FEATURE_SELECTION).fit_transform(x_dev, y_dev_gold)
 
 
-x_dev=np.asarray(x_dev)
-x_train=np.asarray(x_train)
+    x_dev_selected=np.asarray(x_dev_selected)
+    x_train_selected=np.asarray(x_train_selected)
 
-#MLP
-#model = MLPClassifier(solver='lbfgs', alpha=1e-5,hidden_layer_sizes=(5, 2), random_state=1)
-#model=neighbors.KNeighborsClassifier()
-#model = LogisticRegression()
-#model = tree.DecisionTreeClassifier()
-#model = RandomForestClassifier(n_estimators=10)
-#model = Perceptron(tol=1e-3, random_state=0)
-#model = svm.SVC()
-#model = SGDClassifier(loss="hinge", penalty="l2", max_iter=5)
-#model = GaussianNB()
-#model = GradientBoostingClassifier(n_estimators=100, learning_rate=1.0,max_depth=1, random_state=0)
+    #MLP
+    #model = MLPClassifier(solver='lbfgs', alpha=1e-5,hidden_layer_sizes=(5, 2), random_state=1)
+    #model=neighbors.KNeighborsClassifier()
+    #model = LogisticRegression()
+    #model = tree.DecisionTreeClassifier()
+    #model = RandomForestClassifier(n_estimators=10)
+    #model = Perceptron(tol=1e-3, random_state=0)
+    #model = svm.SVC()
+    #model = SGDClassifier(loss="hinge", penalty="l2", max_iter=5)
+    #model = GaussianNB()
+    #model = GradientBoostingClassifier(n_estimators=100, learning_rate=1.0,max_depth=1, random_state=0)
 
 
-model = svm.SVC()
-#rfe.fit(X, y)
-# Train the model using the training sets
-model.fit(x_train, y_train_gold)
-y_dev_pred = model.predict(x_dev)
+    model = svm.SVC()
+    #rfe.fit(X, y)
+    # Train the model using the training sets
+    model.fit(x_train_selected, y_train_gold)
+    y_dev_pred = model.predict(x_dev_selected)
 
-print("\n")
-print(f"****Classification Report when using {type(model).__name__}*** for COUNTRY={COUNTRY} and question to predict={GOLD}")
-print(classification_report(y_dev_gold, y_dev_pred))
-print("\n")
-print("****Confusion Matrix***")
-labels_in=[0,1]
-print(f"yes\tno")
-
-cm=confusion_matrix(y_dev_gold, y_dev_pred,labels=labels_in)
-print(cm)
-print("\n")
-print("****True Positive etc***")
-print('(tn, fp, fn, tp)')
-print(cm.ravel())
-print(accuracy_score(y_dev_gold, y_dev_pred))
-#
+    # print("\n")
+    # print(f"****Classification Report when using {type(model).__name__}*** for COUNTRY={COUNTRY} and question to predict={GOLD}")
+    # print(classification_report(y_dev_gold, y_dev_pred))
+    # print("\n")
+    # print("****Confusion Matrix***")
+    # labels_in=[0,1]
+    # print(f"yes\tno")
+    #
+    # cm=confusion_matrix(y_dev_gold, y_dev_pred,labels=labels_in)
+    # print(cm)
+    # print("\n")
+    # print("****True Positive etc***")
+    # print('(tn, fp, fn, tp)')
+    # print(cm.ravel())
+    acc=accuracy_score(y_dev_gold, y_dev_pred)
+    feature_accuracy[feature_count]=acc
+for k,v in (feature_accuracy.items()):
+    print(k,v)
+    print("\n")
 # # Plot outputs
 # plt.scatter(x_dev_gold, y_dev_gold, color='black')
 # plt.scatter(x_dev_gold, y_dev_pred, color='blue', linewidth=3)
