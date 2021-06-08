@@ -70,15 +70,18 @@ x_dev_gold=np.asarray(dev)
 #model = tree.DecisionTreeClassifier()
 #model = RandomForestClassifier(n_estimators=10)
 #model = Perceptron(tol=1e-3, random_state=0)
-model = svm.SVC()
+#model = svm.SVC()
 #model = SGDClassifier(loss="hinge", penalty="l2", max_iter=5)
 #model = GaussianNB()
 #model = GradientBoostingClassifier(n_estimators=100, learning_rate=1.0,max_depth=1, random_state=0)
 
 
-
+model = svm.SVC()
+from sklearn.feature_selection import RFE
+rfe = RFE(estimator=model, n_features_to_select=1, step=1)
+#rfe.fit(X, y)
 # Train the model using the training sets
-model.fit(x_train_gold, y_train_gold)
+rfe.fit(x_train_gold, y_train_gold)
 y_dev_pred = model.predict(x_dev_gold)
 
 print("\n")
