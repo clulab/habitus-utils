@@ -24,8 +24,9 @@ import git,logging
 COUNTRY='bgd'
 GOLD="F58"
 RANDOM_SEED=3252
-TOTAL_FEATURE_COUNT=27
+TOTAL_FEATURE_COUNT=2
 FEATURE_SELECTION_ALGOS=["SelectKBest"]
+FILL_NAN_WITH=-1
 
 
 random.seed(RANDOM_SEED)
@@ -57,17 +58,9 @@ logging.basicConfig(
 )
 logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
 
-
-
-
-
-
 sys.path.append('/Users/mordor/research/habitus_project/mycode/predictables/Data/Data Objects/Code and Notebooks')
 Data = CGAP_Decoded()
 Data.read_and_decode('/Users/mordor/research/habitus_project/mycode/predictables/Data/Data Objects/CGAP_JSON.txt')
-
-x=Data.bgd_A1
-
 bgd = Country_Decoded(COUNTRY,Data)
 
 #get all data for the given country. then split it into train, dev, split
@@ -76,14 +69,15 @@ df1=bgd.concat_all_single_answer_qns(qns_to_avoid)
 df2=bgd.concat_all_multiple_answer_qns(qns_to_avoid)
 assert len(df1)==len(df2)
 df_combined = pd.concat([df1, df2], axis=1)
-df_combined=df_combined.fillna(-1)
+df_combined=df_combined.fillna(FILL_NAN_WITH)
+
 
 #
 # qns_to_add=['F53','F54','F55','F56','F58']
 # df1=bgd.concat_all_single_answer_qns_to_add(qns_to_add)
 # df2=bgd.concat_all_multiple_answer_qns_to_add(qns_to_add)
 # df_combined = pd.concat([df1, df2], axis=1)
-# df_combined=df_combined.fillna(9999)
+# df_combined=df_combined.fillna(-1)
 
 
 
@@ -92,9 +86,14 @@ train,test_dev=train_test_split(df_combined,  test_size=0.2,shuffle=True)
 test,dev=train_test_split(test_dev,  test_size=0.5,shuffle=True)
 
 
-
-y_train_gold=np.asarray(train[GOLD]).reshape(-1, 1)
+#y_train_gold=np.asarray(train[GOLD]).reshape(-1, 1)
+y_train_gold=(train[GOLD])
 train.drop(GOLD,inplace=True,axis=1)
+#x_train_selected = SelectKBest(mutual_info_classif, k=1).fit_transform(train, y_train_gold)
+x_train_selected = SelectKBest(mutual_info_classif, k=1).fit(train, y_train_gold)
+
+
+
 
 
 
@@ -106,11 +105,11 @@ dev.drop(GOLD,inplace=True,axis=1)
 
 feature_accuracy={}
 for feature_count in range(1, TOTAL_FEATURE_COUNT):
-    # x_train_selected = SelectKBest(mutual_info_classif, k=feature_count).fit_transform(train, y_train_gold)
-    # x_dev_selected = SelectKBest(mutual_info_classif, k=feature_count).fit_transform(dev, y_dev_gold)
+    x_train_selected = SelectKBest(mutual_info_classif, k=feature_count).fit_transform(train, y_train_gold)
+    x_dev_selected = SelectKBest(mutual_info_classif, k=feature_count).fit_transform(dev, y_dev_gold)
 
-    x_train_selected = SelectPercentile(mutual_info_classif, percentile=feature_count).fit_transform(train, y_train_gold)
-    x_dev_selected = SelectPercentile(mutual_info_classif, percentile=feature_count).fit_transform(dev, y_dev_gold)
+    # x_train_selected = SelectPercentile(chi2, percentile=feature_count).fit_transform(train, y_train_gold)
+    # x_dev_selected = SelectPercentile(chi2, percentile=feature_count).fit_transform(dev, y_dev_gold)
 
     x_dev_selected=np.asarray(x_dev_selected)
     x_train_selected=np.asarray(x_train_selected)
@@ -149,8 +148,7 @@ for feature_count in range(1, TOTAL_FEATURE_COUNT):
     logger.debug('(tn, fp, fn, tp)')
     logger.debug(cm.ravel())
 
-
-    acc=accuracy_score(y_dev_gold, y_dev_pred)
-    feature_accuracy[feature_count]=acc
+acc=accuracy_score(y_dev_gold, y_dev_pred)
+feature_accuracy[feature_count]=acc
 for k,v in (feature_accuracy.items()):
     logger.info(f"{k}\t{v}")
