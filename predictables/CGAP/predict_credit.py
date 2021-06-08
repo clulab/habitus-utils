@@ -15,7 +15,8 @@ from sklearn.naive_bayes import GaussianNB,CategoricalNB
 import random
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.metrics import confusion_matrix
-
+from sklearn.feature_selection import SelectKBest
+from sklearn.feature_selection import chi2
 COUNTRY='bgd'
 GOLD="F58"
 RANDOM_SEED=3252
@@ -47,7 +48,9 @@ qns_to_add=['F53','F54','F55','F56','F58']
 df1=bgd.concat_all_single_answer_qns_to_add(qns_to_add)
 df2=bgd.concat_all_multiple_answer_qns_to_add(qns_to_add)
 df_combined = pd.concat([df1, df2], axis=1)
-df_combined=df_combined.fillna(-1)
+df_combined=df_combined.fillna(9999)
+
+
 
 
 train,test_dev=train_test_split(df_combined,  test_size=0.2,shuffle=True)
@@ -59,9 +62,15 @@ y_train_gold=np.asarray(train[GOLD]).reshape(-1, 1)
 train.drop(GOLD,inplace=True,axis=1)
 x_train_gold=np.asarray(train)
 
+
+
 y_dev_gold=np.asarray(dev[GOLD])
 dev.drop(GOLD,inplace=True,axis=1)
 x_dev_gold=np.asarray(dev)
+
+
+x_train_gold = SelectKBest(chi2, k=2).fit_transform(x_train_gold, y_train_gold)
+x_dev_gold = SelectKBest(chi2, k=2).fit_transform(x_dev_gold, y_dev_gold)
 
 #MLP
 #model = MLPClassifier(solver='lbfgs', alpha=1e-5,hidden_layer_sizes=(5, 2), random_state=1)
@@ -77,11 +86,9 @@ x_dev_gold=np.asarray(dev)
 
 
 model = svm.SVC()
-from sklearn.feature_selection import RFE
-rfe = RFE(estimator=model, n_features_to_select=1, step=1)
 #rfe.fit(X, y)
 # Train the model using the training sets
-rfe.fit(x_train_gold, y_train_gold)
+model.fit(x_train_gold, y_train_gold)
 y_dev_pred = model.predict(x_dev_gold)
 
 print("\n")
