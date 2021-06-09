@@ -18,7 +18,7 @@ from sklearn.metrics import confusion_matrix
 from sklearn.feature_selection import SelectKBest
 from sklearn.feature_selection import chi2,f_classif,mutual_info_classif,SelectPercentile
 from sklearn.metrics import accuracy_score
-import git,logging
+import git,logging,os
 
 
 COUNTRY='bgd'
@@ -48,7 +48,8 @@ def get_git_info():
     return repo_infos
 
 git_details=get_git_info()
-log_file_name=git_details['repo_short_sha']+".log"
+os.path.join
+log_file_name=os.path.join(os.getcwd(),"logs/",git_details['repo_short_sha']+".log")
 logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(name)s -   %(message)s",
     datefmt="%m/%d/%Y %H:%M:%S",
@@ -64,7 +65,7 @@ Data.read_and_decode('/Users/mordor/research/habitus_project/mycode/predictables
 bgd = Country_Decoded(COUNTRY,Data)
 
 #get all data for the given country. then split it into train, dev, split
-qns_to_avoid=['COUNTRY','Country_Decoded']
+qns_to_avoid=['COUNTRY','Country_Decoded','F53','F54','F55','F56']
 df1=bgd.concat_all_single_answer_qns(qns_to_avoid)
 df2=bgd.concat_all_multiple_answer_qns(qns_to_avoid)
 assert len(df1)==len(df2)
@@ -90,7 +91,7 @@ test,dev=train_test_split(test_dev,  test_size=0.5,shuffle=True)
 y_train_gold=(train[GOLD])
 train.drop(GOLD,inplace=True,axis=1)
 #x_train_selected = SelectKBest(mutual_info_classif, k=1).fit_transform(train, y_train_gold)
-x_train_selected = SelectKBest(mutual_info_classif, k=1).fit(train, y_train_gold)
+
 
 
 
@@ -105,7 +106,16 @@ dev.drop(GOLD,inplace=True,axis=1)
 
 feature_accuracy={}
 for feature_count in range(1, TOTAL_FEATURE_COUNT):
+    columns_scores = SelectKBest(mutual_info_classif, k=1).fit(train, y_train_gold)
+
+    best_feature_indices = np.argpartition(columns_scores.scores_, -feature_count)[-feature_count:]
+
+    best_features = []
+    for b in best_feature_indices:
+        best_features.append(train.columns[b])
+
     x_train_selected = SelectKBest(mutual_info_classif, k=feature_count).fit_transform(train, y_train_gold)
+
     x_dev_selected = SelectKBest(mutual_info_classif, k=feature_count).fit_transform(dev, y_dev_gold)
 
     # x_train_selected = SelectPercentile(chi2, percentile=feature_count).fit_transform(train, y_train_gold)
@@ -134,7 +144,7 @@ for feature_count in range(1, TOTAL_FEATURE_COUNT):
     y_dev_pred = model.predict(x_dev_selected)
 
     logger.debug("\n")
-    logger.debug(f"****Classification Report when using {type(model).__name__}*** for COUNTRY={COUNTRY} and question to predict={GOLD}")
+    logger.debug(f"****Classification Report when using {type(model).__name__}*** for COUNTRY={COUNTRY} and question to predict={GOLD} when using {feature_count} best features")
     logger.debug(classification_report(y_dev_gold, y_dev_pred))
     logger.debug("\n")
     logger.debug("****Confusion Matrix***")
@@ -149,6 +159,7 @@ for feature_count in range(1, TOTAL_FEATURE_COUNT):
     logger.debug(cm.ravel())
 
 acc=accuracy_score(y_dev_gold, y_dev_pred)
-feature_accuracy[feature_count]=acc
+feature_accuracy[feature_count]=(str(acc),"".join(best_features))
+logger.info("Number of k best features\t accuracy:feature list")
 for k,v in (feature_accuracy.items()):
     logger.info(f"{k}\t{v}")
