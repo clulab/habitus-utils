@@ -22,7 +22,8 @@ import git,logging,os
 
 
 COUNTRY='bgd'
-GOLD="F58"
+SURVEY_QN_TO_PREDICT= "F53"
+MULTI_LABEL=True
 RANDOM_SEED=3252
 TOTAL_FEATURE_COUNT=2
 FEATURE_SELECTION_ALGOS=["SelectKBest"]
@@ -53,11 +54,11 @@ log_file_name=os.path.join(os.getcwd(),"logs/",git_details['repo_short_sha']+".l
 logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(name)s -   %(message)s",
     datefmt="%m/%d/%Y %H:%M:%S",
-    level=logging.DEBUG ,
+    level=logging.INFO ,
     filename=log_file_name,
     filemode='w'
 )
-logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
+logging.getLogger().addHandler(logging.StreamHandler())
 
 sys.path.append('/Users/mordor/research/habitus_project/mycode/predictables/Data/Data Objects/Code and Notebooks')
 Data = CGAP_Decoded()
@@ -65,7 +66,7 @@ Data.read_and_decode('/Users/mordor/research/habitus_project/mycode/predictables
 bgd = Country_Decoded(COUNTRY,Data)
 
 #get all data for the given country. then split it into train, dev, split
-qns_to_avoid=['COUNTRY','Country_Decoded','F53','F54','F55','F56']
+qns_to_avoid=['COUNTRY','Country_Decoded']
 df1=bgd.concat_all_single_answer_qns(qns_to_avoid)
 df2=bgd.concat_all_multiple_answer_qns(qns_to_avoid)
 assert len(df1)==len(df2)
@@ -73,7 +74,7 @@ df_combined = pd.concat([df1, df2], axis=1)
 df_combined=df_combined.fillna(FILL_NAN_WITH)
 
 
-#
+# #
 # qns_to_add=['F53','F54','F55','F56','F58']
 # df1=bgd.concat_all_single_answer_qns_to_add(qns_to_add)
 # df2=bgd.concat_all_multiple_answer_qns_to_add(qns_to_add)
@@ -87,29 +88,26 @@ train,test_dev=train_test_split(df_combined,  test_size=0.2,shuffle=True)
 test,dev=train_test_split(test_dev,  test_size=0.5,shuffle=True)
 
 
-#y_train_gold=np.asarray(train[GOLD]).reshape(-1, 1)
-y_train_gold=(train[GOLD])
-train.drop(GOLD,inplace=True,axis=1)
-#x_train_selected = SelectKBest(mutual_info_classif, k=1).fit_transform(train, y_train_gold)
+#separate out the gold/qn to predict so that we train only on the rest
+if MULTI_LABEL==True:
+    y_train_gold=train.filter(regex=(SURVEY_QN_TO_PREDICT+"_*"))
+    train.drop(y_train_gold.columns, inplace=True, axis=1)
+    y_dev_gold = dev.filter(regex=(SURVEY_QN_TO_PREDICT+"_*"))
+    dev.drop(y_dev_gold.columns, inplace=True, axis=1)
+    assert len(train.columns) == len(df_combined.columns) - len(y_train_gold.columns)
+    assert len(dev.columns) == len(df_combined.columns) - len(y_dev_gold.columns)
 
-
-
-
-
-
-
-
-
-y_dev_gold=np.asarray(dev[GOLD])
-dev.drop(GOLD,inplace=True,axis=1)
+else:
+    y_train_gold=(train[SURVEY_QN_TO_PREDICT])
+    train.drop(SURVEY_QN_TO_PREDICT, inplace=True, axis=1)
+    y_dev_gold=np.asarray(dev[SURVEY_QN_TO_PREDICT])
+    dev.drop(SURVEY_QN_TO_PREDICT, inplace=True, axis=1)
 
 
 feature_accuracy={}
 for feature_count in range(1, TOTAL_FEATURE_COUNT):
-    columns_scores = SelectKBest(mutual_info_classif, k=1).fit(train, y_train_gold)
-
+    columns_scores = SelectKBest(mutual_info_classif, k=feature_count).fit(train, y_train_gold)
     best_feature_indices = np.argpartition(columns_scores.scores_, -feature_count)[-feature_count:]
-
     best_features = []
     for b in best_feature_indices:
         best_features.append(train.columns[b])
@@ -144,7 +142,8 @@ for feature_count in range(1, TOTAL_FEATURE_COUNT):
     y_dev_pred = model.predict(x_dev_selected)
 
     logger.debug("\n")
-    logger.debug(f"****Classification Report when using {type(model).__name__}*** for COUNTRY={COUNTRY} and question to predict={GOLD} when using {feature_count} best features")
+    logger.debug(
+        f"****Classification Report when using {type(model).__name__}*** for COUNTRY={COUNTRY} and question to predict={SURVEY_QN_TO_PREDICT} when using {feature_count} best features")
     logger.debug(classification_report(y_dev_gold, y_dev_pred))
     logger.debug("\n")
     logger.debug("****Confusion Matrix***")
@@ -158,8 +157,8 @@ for feature_count in range(1, TOTAL_FEATURE_COUNT):
     logger.debug('(tn, fp, fn, tp)')
     logger.debug(cm.ravel())
 
-acc=accuracy_score(y_dev_gold, y_dev_pred)
-feature_accuracy[feature_count]=(str(acc),"".join(best_features))
+    acc=accuracy_score(y_dev_gold, y_dev_pred)
+    feature_accuracy[feature_count]=(str(acc),",".join(best_features))
 logger.info("Number of k best features\t accuracy:feature list")
 for k,v in (feature_accuracy.items()):
     logger.info(f"{k}\t{v}")
