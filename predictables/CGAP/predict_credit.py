@@ -151,12 +151,11 @@ for feature_count in range(1, TOTAL_FEATURE_COUNT):
         y_dev_pred = model.predict(x_dev)
         print(y_dev_pred)
         print(f"shape of y_dev_pred={y_dev_pred.shape}")
-        all_acc=np.empty(y_dev_pred.shape[1])
+        all_acc=np.zeros(y_dev_pred.shape[0])
         for index,each_row in enumerate(y_dev_pred):
             acc = accuracy_score(y_dev_gold[index], each_row)
-            print(acc)
             all_acc[index]=acc
-        print(f"average accuracy across all multi label class predictions={np.mean(all_cc)}")
+        print(f"average accuracy across all multi label class predictions={np.mean(all_acc)}")
 
     else:
         model.fit(x_train, y_train_gold)
