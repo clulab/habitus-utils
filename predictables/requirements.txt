@@ -5,3 +5,4 @@ scipy
 matplotlib
 tqdm
 gitpython
+scikit-multilearn

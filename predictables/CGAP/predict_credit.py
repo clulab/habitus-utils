@@ -18,18 +18,25 @@ from sklearn.metrics import confusion_matrix
 from sklearn.feature_selection import SelectKBest
 from sklearn.feature_selection import chi2,f_classif,mutual_info_classif,SelectPercentile
 from sklearn.metrics import accuracy_score
+from skmultilearn.adapt import MLkNN
 import git,logging,os
-
+from sklearn.datasets import make_multilabel_classification
+from sklearn.multioutput import MultiOutputClassifier
+from sklearn.neighbors import KNeighborsClassifier
 
 COUNTRY='bgd'
-SURVEY_QN_TO_PREDICT= "F58"
-MULTI_LABEL=False
+#if you know the qn is multi-label, ensure MULTI_LABEL=True.
+#todo: do that using code
+SURVEY_QN_TO_PREDICT= "F53"
+MULTI_LABEL=True
 RANDOM_SEED=3252
 TOTAL_FEATURE_COUNT=2
 FEATURE_SELECTION_ALGOS=["SelectKBest"]
 FILL_NAN_WITH=-1
-DO_FEATURE_SELECTION=True
-USE_ALL_DATA=False
+DO_FEATURE_SELECTION=False
+USE_ALL_DATA=True
+#when training using all qns in the survey are there any qns you would want the classifier not to train on.
+# e.g., housekeeping columns like Country_Decoded. or if you want to remove handpicked qns , you add them to the list here
 QNS_TO_AVOID = ['COUNTRY', 'Country_Decoded']
 #QNS_TO_AVOID = ['COUNTRY', 'Country_Decoded','F53','F54','F55','F56']
 
@@ -99,15 +106,14 @@ if MULTI_LABEL==True:
     x_train=train.drop(y_train_gold.columns, axis=1)
     y_dev_gold = dev.filter(regex=(SURVEY_QN_TO_PREDICT+"_*"))
     x_dev=dev.drop(y_dev_gold.columns, axis=1)
-    assert len(train.columns) == len(df_combined.columns) - len(y_train_gold.columns)
-    assert len(dev.columns) == len(df_combined.columns) - len(y_dev_gold.columns)
-
 else:
     y_train_gold=(train[SURVEY_QN_TO_PREDICT])
     x_train =train.drop(SURVEY_QN_TO_PREDICT,axis=1)
     y_dev_gold=np.asarray(dev[SURVEY_QN_TO_PREDICT])
     x_dev=dev.drop(SURVEY_QN_TO_PREDICT, axis=1)
 
+assert len(x_train.columns) == len(df_combined.columns) - len(y_train_gold.columns)
+assert len(x_dev.columns) == len(df_combined.columns) - len(y_dev_gold.columns)
 
 feature_accuracy={}
 for feature_count in range(1, TOTAL_FEATURE_COUNT):
@@ -121,8 +127,10 @@ for feature_count in range(1, TOTAL_FEATURE_COUNT):
         x_dev_selected = SelectKBest(mutual_info_classif, k=feature_count).fit_transform(x_dev, y_dev_gold)
         # x_train_selected = SelectPercentile(chi2, percentile=feature_count).fit_transform(x_train, y_train_gold)
         # x_dev_selected = SelectPercentile(chi2, percentile=feature_count).fit_transform(x_dev, y_dev_gold)
-        x_train=np.asarray(x_train)
-        x_dev=np.asarray(x_dev)
+    x_train=np.asarray(x_train)
+    x_dev=np.asarray(x_dev)
+    y_train_gold = np.asarray(y_train_gold)
+    y_dev_gold = np.asarray(y_dev_gold)
 
     #MLP
     #model = MLPClassifier(solver='lbfgs', alpha=1e-5,hidden_layer_sizes=(5, 2), random_state=1)
@@ -135,34 +143,49 @@ for feature_count in range(1, TOTAL_FEATURE_COUNT):
     #model = SGDClassifier(loss="hinge", penalty="l2", max_iter=5)
     #model = GaussianNB()
     #model = GradientBoostingClassifier(n_estimators=100, learning_rate=1.0,max_depth=1, random_state=0)
+    #model = MLkNN(k=20)
+    model=neighbors.KNeighborsClassifier()
 
+    if (MULTI_LABEL==True):
+        model=MultiOutputClassifier(model).fit(x_train, y_train_gold)
+        y_dev_pred = model.predict(x_dev)
+        print(y_dev_pred)
+        print(f"shape of y_dev_pred={y_dev_pred.shape}")
+        all_acc=np.empty(y_dev_pred.shape[1])
+        for index,each_row in enumerate(y_dev_pred):
+            acc = accuracy_score(y_dev_gold[index], each_row)
+            print(acc)
+            all_acc[index]=acc
+        print(f"average accuracy across all multi label class predictions={np.mean(all_cc)}")
 
-    model = svm.SVC()
-    #rfe.fit(X, y)
-    # Train the model using the training sets
-    model.fit(x_train, y_train_gold)
-    y_dev_pred = model.predict(x_dev)
+    else:
+        model.fit(x_train, y_train_gold)
+        y_dev_pred = model.predict(x_dev)
 
-    logger.debug("\n")
-    logger.debug(
-        f"****Classification Report when using {type(model).__name__}*** for COUNTRY={COUNTRY} and question to predict={SURVEY_QN_TO_PREDICT} when using {feature_count} best features")
-    logger.debug(classification_report(y_dev_gold, y_dev_pred))
-    logger.debug("\n")
-    logger.debug("****Confusion Matrix***")
-    labels_in=[0,1]
-    logger.debug(f"yes\tno")
+    # logger.debug("\n")
+    # logger.debug(
+    #     f"****Classification Report when using {type(model).__name__}*** for COUNTRY={COUNTRY} and question to predict={SURVEY_QN_TO_PREDICT} when using {feature_count} best features")
+    # logger.debug(classification_report(y_dev_gold, y_dev_pred))
+    # logger.debug("\n")
+    # logger.debug("****Confusion Matrix***")
+    # labels_in=[0,1]
+    # logger.debug(f"yes\tno")
+    #
+    # cm=confusion_matrix(y_dev_gold, y_dev_pred,labels=labels_in)
+    # logger.debug(cm)
+    # logger.debug("\n")
+    # logger.debug("****True Positive etc***")
+    # logger.debug('(tn, fp, fn, tp)')
+    # logger.debug(cm.ravel())
 
-    cm=confusion_matrix(y_dev_gold, y_dev_pred,labels=labels_in)
-    logger.debug(cm)
-    logger.debug("\n")
-    logger.debug("****True Positive etc***")
-    logger.debug('(tn, fp, fn, tp)')
-    logger.debug(cm.ravel())
-
-    acc=accuracy_score(y_dev_gold, y_dev_pred)
+    #acc=accuracy_score(y_dev_gold, y_dev_pred)
     if (DO_FEATURE_SELECTION == True):
         feature_accuracy[feature_count]=(str(acc),",".join(best_features))
 if(DO_FEATURE_SELECTION==True):
     logger.info("Number of k best features\t accuracy:feature list")
     for k,v in (feature_accuracy.items()):
         logger.info(f"{k}\t{v}")
+#else:
+    #print(f"accuracy={acc}")
+
+
