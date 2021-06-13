@@ -27,13 +27,15 @@ from sklearn.neighbors import KNeighborsClassifier
 COUNTRY='bgd'
 #if you know the qn is multi-label, ensure MULTI_LABEL=True.
 #todo: do that using code
-SURVEY_QN_TO_PREDICT= "F53"
-MULTI_LABEL=True
+SURVEY_QN_TO_PREDICT= "F58"
+MULTI_LABEL=False
 RANDOM_SEED=3252
-TOTAL_FEATURE_COUNT=2
+TOTAL_FEATURE_COUNT=3
 FEATURE_SELECTION_ALGOS=["SelectKBest"]
 FILL_NAN_WITH=-1
-DO_FEATURE_SELECTION=False
+
+#ensure multi_label is False. doing feature selection in multi label is yet to be implemented as of june 12th 2021
+DO_FEATURE_SELECTION=True
 USE_ALL_DATA=True
 #when training using all qns in the survey are there any qns you would want the classifier not to train on.
 # e.g., housekeeping columns like Country_Decoded. or if you want to remove handpicked qns , you add them to the list here
@@ -112,19 +114,22 @@ else:
     y_dev_gold=np.asarray(dev[SURVEY_QN_TO_PREDICT])
     x_dev=dev.drop(SURVEY_QN_TO_PREDICT, axis=1)
 
-assert len(x_train.columns) == len(df_combined.columns) - len(y_train_gold.columns)
-assert len(x_dev.columns) == len(df_combined.columns) - len(y_dev_gold.columns)
 
 feature_accuracy={}
 for feature_count in range(1, TOTAL_FEATURE_COUNT):
     if(DO_FEATURE_SELECTION==True):
-        columns_scores = SelectKBest(mutual_info_classif, k=feature_count).fit(x_train, y_train_gold)
-        best_feature_indices = np.argpartition(columns_scores.scores_, -feature_count)[-feature_count:]
+        #fit only once- get_support
+        #apply same mask in dev
+        selectK = SelectKBest(mutual_info_classif, k=feature_count)
+        selectK.fit(x_train, y_train_gold)
+        selectMask=selectK.get_support()
+        best_feature_indices = np.where(selectMask)[0].tolist()
         best_features = []
+        #to get the name of the features to print later
         for b in best_feature_indices:
             best_features.append(x_train.columns[b])
-        x_train_selected = SelectKBest(mutual_info_classif, k=feature_count).fit_transform(x_train, y_train_gold)
-        x_dev_selected = SelectKBest(mutual_info_classif, k=feature_count).fit_transform(x_dev, y_dev_gold)
+        x_train_selected = x_train.iloc[:,best_feature_indices]
+        x_dev_selected = x_dev.iloc[:,best_feature_indices]
         # x_train_selected = SelectPercentile(chi2, percentile=feature_count).fit_transform(x_train, y_train_gold)
         # x_dev_selected = SelectPercentile(chi2, percentile=feature_count).fit_transform(x_dev, y_dev_gold)
     x_train=np.asarray(x_train)
@@ -133,7 +138,7 @@ for feature_count in range(1, TOTAL_FEATURE_COUNT):
     y_dev_gold = np.asarray(y_dev_gold)
 
     #MLP
-    #model = MLPClassifier(solver='lbfgs', alpha=1e-5,hidden_layer_sizes=(5, 2), random_state=1)
+    model = MLPClassifier(solver='lbfgs', alpha=1e-5,hidden_layer_sizes=(5, 2), random_state=1)
     #model=neighbors.KNeighborsClassifier()
     #model = LogisticRegression()
     #model = tree.DecisionTreeClassifier()
@@ -144,13 +149,16 @@ for feature_count in range(1, TOTAL_FEATURE_COUNT):
     #model = GaussianNB()
     #model = GradientBoostingClassifier(n_estimators=100, learning_rate=1.0,max_depth=1, random_state=0)
     #model = MLkNN(k=20)
-    model=neighbors.KNeighborsClassifier()
+    #model=neighbors.KNeighborsClassifier()
 
     if (MULTI_LABEL==True):
+        #todo remove all -1..i.e remove the household who didnt answer qn you are trying to predict..-do this for f58 (whatever qn you are predicting)
         model=MultiOutputClassifier(model).fit(x_train, y_train_gold)
         y_dev_pred = model.predict(x_dev)
-        print(y_dev_pred)
-        print(f"shape of y_dev_pred={y_dev_pred.shape}")
+        #print(y_dev_pred)
+        #print(f"shape of y_dev_pred={y_dev_pred.shape}")
+        #todo print classification report per columns..
+        #todo: dont take average across rows or columns
         all_acc=np.zeros(y_dev_pred.shape[0])
         for index,each_row in enumerate(y_dev_pred):
             acc = accuracy_score(y_dev_gold[index], each_row)
@@ -160,6 +168,7 @@ for feature_count in range(1, TOTAL_FEATURE_COUNT):
     else:
         model.fit(x_train, y_train_gold)
         y_dev_pred = model.predict(x_dev)
+        acc = accuracy_score(y_dev_gold, y_dev_pred)
 
     # logger.debug("\n")
     # logger.debug(
