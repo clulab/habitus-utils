@@ -30,7 +30,7 @@ COUNTRY='bgd'
 SURVEY_QN_TO_PREDICT= "F58"
 MULTI_LABEL=False
 RANDOM_SEED=3252
-TOTAL_FEATURE_COUNT=3
+TOTAL_FEATURE_COUNT=27
 FEATURE_SELECTION_ALGOS=["SelectKBest"]
 FILL_NAN_WITH=-1
 
@@ -91,7 +91,6 @@ if(USE_ALL_DATA==True):
     df_combined = pd.concat([df1, df2], axis=1)
     df_combined = df_combined.fillna(FILL_NAN_WITH)
 else:
-
     df1=bgd.concat_all_single_answer_qns_to_add(QNS_TO_ADD)
     df2=bgd.concat_all_multiple_answer_qns_to_add(QNS_TO_ADD)
     df_combined = pd.concat([df1, df2], axis=1)
@@ -132,10 +131,15 @@ for feature_count in range(1, TOTAL_FEATURE_COUNT):
         x_dev_selected = x_dev.iloc[:,best_feature_indices]
         # x_train_selected = SelectPercentile(chi2, percentile=feature_count).fit_transform(x_train, y_train_gold)
         # x_dev_selected = SelectPercentile(chi2, percentile=feature_count).fit_transform(x_dev, y_dev_gold)
-    x_train=np.asarray(x_train)
-    x_dev=np.asarray(x_dev)
-    y_train_gold = np.asarray(y_train_gold)
-    y_dev_gold = np.asarray(y_dev_gold)
+        x_train_selected=np.asarray(x_train_selected)
+        x_dev_selected=np.asarray(x_dev_selected)
+        y_train_gold = np.asarray(y_train_gold)
+        y_dev_gold = np.asarray(y_dev_gold)
+    else:
+        x_train_selected = np.asarray(x_train)
+        x_dev_selected = np.asarray(x_train)
+        y_train_gold = np.asarray(y_train_gold)
+        y_dev_gold = np.asarray(y_dev_gold)
 
     #MLP
     model = MLPClassifier(solver='lbfgs', alpha=1e-5,hidden_layer_sizes=(5, 2), random_state=1)
@@ -166,8 +170,8 @@ for feature_count in range(1, TOTAL_FEATURE_COUNT):
         print(f"average accuracy across all multi label class predictions={np.mean(all_acc)}")
 
     else:
-        model.fit(x_train, y_train_gold)
-        y_dev_pred = model.predict(x_dev)
+        model.fit(x_train_selected, y_train_gold)
+        y_dev_pred = model.predict(x_dev_selected)
         acc = accuracy_score(y_dev_gold, y_dev_pred)
 
     # logger.debug("\n")
