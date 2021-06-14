@@ -103,14 +103,14 @@ test,dev=train_test_split(test_dev,  test_size=0.5,shuffle=True)
 
 #separate out the gold/qn to predict so that we train only on the rest
 if MULTI_LABEL==True:
-    y_train_gold=train.filter(regex=(SURVEY_QN_TO_PREDICT+"_*"))
+    y_train_gold=train.filter(regex=(SURVEY_QN_TO_PREDICT + "_*"))
     x_train=train.drop(y_train_gold.columns, axis=1)
-    y_dev_gold = dev.filter(regex=(SURVEY_QN_TO_PREDICT+"_*"))
+    y_dev_gold = dev.filter(regex=(SURVEY_QN_TO_PREDICT + "_*"))
     x_dev=dev.drop(y_dev_gold.columns, axis=1)
 else:
-    y_train_gold=(train[SURVEY_QN_TO_PREDICT])
+    y_train_gold_selected=(train[SURVEY_QN_TO_PREDICT])
     x_train =train.drop(SURVEY_QN_TO_PREDICT,axis=1)
-    y_dev_gold=np.asarray(dev[SURVEY_QN_TO_PREDICT])
+    y_dev_gold_selected=np.asarray(dev[SURVEY_QN_TO_PREDICT])
     x_dev=dev.drop(SURVEY_QN_TO_PREDICT, axis=1)
 
 #model = MLPClassifier(solver='sgd', alpha=1e-5,hidden_layer_sizes=(5, 2), random_state=1)
@@ -130,7 +130,7 @@ if(DO_FEATURE_SELECTION==True):
     feature_accuracy = {}
     for feature_count in range(1, TOTAL_FEATURE_COUNT):
         selectK = SelectKBest(mutual_info_classif, k=feature_count)
-        selectK.fit(x_train, y_train_gold)
+        selectK.fit(x_train, y_train_gold_selected)
         selectMask=selectK.get_support()
         best_feature_indices = np.where(selectMask)[0].tolist()
         best_features = []
@@ -143,41 +143,40 @@ if(DO_FEATURE_SELECTION==True):
         # x_dev_selected = SelectPercentile(chi2, percentile=feature_count).fit_transform(x_dev, y_dev_gold)
         x_train_selected=np.asarray(x_train_selected)
         x_dev_selected=np.asarray(x_dev_selected)
-        y_train_gold = np.asarray(y_train_gold)
-        y_dev_gold = np.asarray(y_dev_gold)
-        model.fit(x_train_selected, y_train_gold)
+        y_train_gold_selected = np.asarray(y_train_gold)
+        y_dev_gold_selected = np.asarray(y_dev_gold)
+        model.fit(x_train_selected, y_train_gold_selected)
         y_dev_pred = model.predict(x_dev_selected)
-        acc = accuracy_score(y_dev_gold, y_dev_pred)
+        acc = accuracy_score(y_dev_gold_selected, y_dev_pred)
         if (DO_FEATURE_SELECTION == True):
             feature_accuracy[feature_count] = (str(acc), ",".join(best_features))
 else:
     x_train_selected = np.asarray(x_train)
     x_dev_selected = np.asarray(x_dev)
-    y_train_gold = np.asarray(y_train_gold)
-    y_dev_gold = np.asarray(y_dev_gold)
+    y_train_gold_selected = np.asarray(y_train_gold)
+    y_dev_gold_selected = np.asarray(y_dev_gold)
 
 
 
     if (MULTI_LABEL==True):
         #todo remove all -1..i.e remove the household who didnt answer qn you are trying to predict..-do this for f58 (whatever qn you are predicting)
-        model=MultiOutputClassifier(model).fit(x_train_selected, y_train_gold)
+        model=MultiOutputClassifier(model).fit(x_train_selected, y_train_gold_selected)
         y_dev_pred = model.predict(x_dev)
-        #todo print classification report per columns..
-        #todo: dont take average across rows or columns
         all_acc=np.zeros(y_dev_pred.shape[0])
         #print accuracy per label
         multilabelFeature_accuracy={}
         for index,each_column in enumerate(y_dev_pred.T):
-            acc = accuracy_score(y_dev_gold.T[index], each_column)
-            multilabelFeature_accuracy[index]=acc
+            acc = accuracy_score(y_dev_gold_selected.T[index], each_column)
+            column_name=y_dev_gold.columns[index]
+            multilabelFeature_accuracy[column_name]=acc
             logger.debug("\n")
             logger.debug(
                 f"****Classification Report when using {type(model).__name__}*** for COUNTRY={COUNTRY} and question to predict={SURVEY_QN_TO_PREDICT} ")
-            logger.debug(classification_report(y_dev_gold.T[index], each_column))
+            logger.debug(classification_report(y_dev_gold_selected.T[index], each_column))
             logger.debug("\n")
             logger.debug("****Confusion Matrix***")
 
-            cm = confusion_matrix(y_dev_gold.T[index], each_column)
+            cm = confusion_matrix(y_dev_gold_selected.T[index], each_column)
             logger.debug(cm)
             logger.debug("\n")
             logger.debug("****True Positive etc***")
@@ -185,26 +184,26 @@ else:
             logger.debug(cm.ravel())
 
     else:
-        model.fit(x_train_selected, y_train_gold)
+        model.fit(x_train_selected, y_train_gold_selected)
         y_dev_pred = model.predict(x_dev_selected)
-        acc = accuracy_score(y_dev_gold, y_dev_pred)
+        acc = accuracy_score(y_dev_gold_selected, y_dev_pred)
 
         logger.debug("\n")
         logger.debug(
             f"****Classification Report when using {type(model).__name__}*** for COUNTRY={COUNTRY} and question to predict={SURVEY_QN_TO_PREDICT} ")
-        logger.debug(classification_report(y_dev_gold, y_dev_pred))
+        logger.debug(classification_report(y_dev_gold_selected, y_dev_pred))
         logger.debug("\n")
         logger.debug("****Confusion Matrix***")
         labels_in=[0,1]
         logger.debug(f"yes\tno")
 
-        cm=confusion_matrix(y_dev_gold, y_dev_pred,labels=labels_in)
+        cm=confusion_matrix(y_dev_gold_selected, y_dev_pred, labels=labels_in)
         logger.debug(cm)
         logger.debug("\n")
         logger.debug("****True Positive etc***")
         logger.debug('(tn, fp, fn, tp)')
         logger.debug(cm.ravel())
-        acc=accuracy_score(y_dev_gold, y_dev_pred)
+        acc=accuracy_score(y_dev_gold_selected, y_dev_pred)
 
 
 if(DO_FEATURE_SELECTION==True):
@@ -213,8 +212,8 @@ if(DO_FEATURE_SELECTION==True):
         logger.info(f"{k}\t{v}")
 else:
     if (MULTI_LABEL == True):
-        logger.info("Feature Column\t accuracy")
+        logger.info("Feature Column\t\taccuracy")
         for k, v in (multilabelFeature_accuracy.items()):
-            logger.info(f"{k}\t{v}")
+            logger.info(f"{k}\t\t\t{v}")
 
 
