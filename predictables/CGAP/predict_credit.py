@@ -25,12 +25,12 @@ from sklearn.multioutput import MultiOutputClassifier
 from sklearn.neighbors import KNeighborsClassifier
 
 COUNTRY='bgd'
-#if you know the qn is multi-label, ensure MULTI_LABEL=True.
+#if you know the survey qn allows for multiple answers from farmer, ensure MULTI_LABEL=True.
 #todo: do that using code
 SURVEY_QN_TO_PREDICT= "F58"
 MULTI_LABEL=False
 RANDOM_SEED=3252
-TOTAL_FEATURE_COUNT=27
+TOTAL_FEATURE_COUNT=29
 FEATURE_SELECTION_ALGOS=["SelectKBest"]
 FILL_NAN_WITH=-1
 
@@ -39,8 +39,8 @@ DO_FEATURE_SELECTION=True
 USE_ALL_DATA=True
 #when training using all qns in the survey are there any qns you would want the classifier not to train on.
 # e.g., housekeeping columns like Country_Decoded. or if you want to remove handpicked qns , you add them to the list here
-QNS_TO_AVOID = ['COUNTRY', 'Country_Decoded']
-#QNS_TO_AVOID = ['COUNTRY', 'Country_Decoded','F53','F54','F55','F56']
+#QNS_TO_AVOID = ['COUNTRY', 'Country_Decoded']
+QNS_TO_AVOID = ['COUNTRY', 'Country_Decoded','F53','F54','F55','F56']
 
 #a bunch of hand picked qns only one which you want to train. Ensure USE_ALL_DATA=False
 QNS_TO_ADD=['F53','F54','F55','F56','F58']
@@ -113,12 +113,22 @@ else:
     y_dev_gold=np.asarray(dev[SURVEY_QN_TO_PREDICT])
     x_dev=dev.drop(SURVEY_QN_TO_PREDICT, axis=1)
 
+#model = MLPClassifier(solver='sgd', alpha=1e-5,hidden_layer_sizes=(5, 2), random_state=1)
+#model=neighbors.KNeighborsClassifier()
+#model = LogisticRegression()
+#model = tree.DecisionTreeClassifier()
+#model = RandomForestClassifier(n_estimators=10)
+#model = Perceptron(tol=1e-3, random_state=0)
+model = svm.SVC()
+#model = SGDClassifier(loss="hinge", penalty="l2", max_iter=5)
+#model = GaussianNB()
+#model = GradientBoostingClassifier(n_estimators=100, learning_rate=1.0,max_depth=1, random_state=0)
+#model = MLkNN(k=20)
+#model=neighbors.KNeighborsClassifier()
 
-feature_accuracy={}
-for feature_count in range(1, TOTAL_FEATURE_COUNT):
-    if(DO_FEATURE_SELECTION==True):
-        #fit only once- get_support
-        #apply same mask in dev
+if(DO_FEATURE_SELECTION==True):
+    feature_accuracy = {}
+    for feature_count in range(1, TOTAL_FEATURE_COUNT):
         selectK = SelectKBest(mutual_info_classif, k=feature_count)
         selectK.fit(x_train, y_train_gold)
         selectMask=selectK.get_support()
@@ -135,25 +145,18 @@ for feature_count in range(1, TOTAL_FEATURE_COUNT):
         x_dev_selected=np.asarray(x_dev_selected)
         y_train_gold = np.asarray(y_train_gold)
         y_dev_gold = np.asarray(y_dev_gold)
-    else:
-        x_train_selected = np.asarray(x_train)
-        x_dev_selected = np.asarray(x_train)
-        y_train_gold = np.asarray(y_train_gold)
-        y_dev_gold = np.asarray(y_dev_gold)
+        model.fit(x_train_selected, y_train_gold)
+        y_dev_pred = model.predict(x_dev_selected)
+        acc = accuracy_score(y_dev_gold, y_dev_pred)
+        if (DO_FEATURE_SELECTION == True):
+            feature_accuracy[feature_count] = (str(acc), ",".join(best_features))
+else:
+    x_train_selected = np.asarray(x_train)
+    x_dev_selected = np.asarray(x_dev)
+    y_train_gold = np.asarray(y_train_gold)
+    y_dev_gold = np.asarray(y_dev_gold)
 
-    #MLP
-    model = MLPClassifier(solver='lbfgs', alpha=1e-5,hidden_layer_sizes=(5, 2), random_state=1)
-    #model=neighbors.KNeighborsClassifier()
-    #model = LogisticRegression()
-    #model = tree.DecisionTreeClassifier()
-    #model = RandomForestClassifier(n_estimators=10)
-    #model = Perceptron(tol=1e-3, random_state=0)
-    #model = svm.SVC()
-    #model = SGDClassifier(loss="hinge", penalty="l2", max_iter=5)
-    #model = GaussianNB()
-    #model = GradientBoostingClassifier(n_estimators=100, learning_rate=1.0,max_depth=1, random_state=0)
-    #model = MLkNN(k=20)
-    #model=neighbors.KNeighborsClassifier()
+
 
     if (MULTI_LABEL==True):
         #todo remove all -1..i.e remove the household who didnt answer qn you are trying to predict..-do this for f58 (whatever qn you are predicting)
@@ -174,30 +177,29 @@ for feature_count in range(1, TOTAL_FEATURE_COUNT):
         y_dev_pred = model.predict(x_dev_selected)
         acc = accuracy_score(y_dev_gold, y_dev_pred)
 
-    # logger.debug("\n")
-    # logger.debug(
-    #     f"****Classification Report when using {type(model).__name__}*** for COUNTRY={COUNTRY} and question to predict={SURVEY_QN_TO_PREDICT} when using {feature_count} best features")
-    # logger.debug(classification_report(y_dev_gold, y_dev_pred))
-    # logger.debug("\n")
-    # logger.debug("****Confusion Matrix***")
-    # labels_in=[0,1]
-    # logger.debug(f"yes\tno")
-    #
-    # cm=confusion_matrix(y_dev_gold, y_dev_pred,labels=labels_in)
-    # logger.debug(cm)
-    # logger.debug("\n")
-    # logger.debug("****True Positive etc***")
-    # logger.debug('(tn, fp, fn, tp)')
-    # logger.debug(cm.ravel())
+        logger.debug("\n")
+        logger.debug(
+            f"****Classification Report when using {type(model).__name__}*** for COUNTRY={COUNTRY} and question to predict={SURVEY_QN_TO_PREDICT} ")
+        logger.debug(classification_report(y_dev_gold, y_dev_pred))
+        logger.debug("\n")
+        logger.debug("****Confusion Matrix***")
+        labels_in=[0,1]
+        logger.debug(f"yes\tno")
 
-    #acc=accuracy_score(y_dev_gold, y_dev_pred)
-    if (DO_FEATURE_SELECTION == True):
-        feature_accuracy[feature_count]=(str(acc),",".join(best_features))
+        cm=confusion_matrix(y_dev_gold, y_dev_pred,labels=labels_in)
+        logger.debug(cm)
+        logger.debug("\n")
+        logger.debug("****True Positive etc***")
+        logger.debug('(tn, fp, fn, tp)')
+        logger.debug(cm.ravel())
+        acc=accuracy_score(y_dev_gold, y_dev_pred)
+
+
 if(DO_FEATURE_SELECTION==True):
     logger.info("Number of k best features\t accuracy:feature list")
     for k,v in (feature_accuracy.items()):
         logger.info(f"{k}\t{v}")
-#else:
-    #print(f"accuracy={acc}")
+else:
+    print(f"accuracy={acc}")
 
 
