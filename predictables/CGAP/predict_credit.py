@@ -27,20 +27,20 @@ from sklearn.neighbors import KNeighborsClassifier
 COUNTRY='bgd'
 #if you know the survey qn allows for multiple answers from farmer, ensure MULTI_LABEL=True.
 #todo: do that using code
-SURVEY_QN_TO_PREDICT= "F58"
-MULTI_LABEL=False
+SURVEY_QN_TO_PREDICT= "F53"
+MULTI_LABEL=True
 RANDOM_SEED=3252
 TOTAL_FEATURE_COUNT=29
 FEATURE_SELECTION_ALGOS=["SelectKBest"]
 FILL_NAN_WITH=-1
 
-#ensure multi_label is False. doing feature selection in multi label is yet to be implemented as of june 12th 2021
-DO_FEATURE_SELECTION=True
+
+DO_FEATURE_SELECTION=False #ensure multi_label is False. doing feature selection in multi label is yet to be implemented as of june 12th 2021
 USE_ALL_DATA=True
 #when training using all qns in the survey are there any qns you would want the classifier not to train on.
 # e.g., housekeeping columns like Country_Decoded. or if you want to remove handpicked qns , you add them to the list here
-#QNS_TO_AVOID = ['COUNTRY', 'Country_Decoded']
-QNS_TO_AVOID = ['COUNTRY', 'Country_Decoded','F53','F54','F55','F56']
+QNS_TO_AVOID = ['COUNTRY', 'Country_Decoded']
+#QNS_TO_AVOID = ['COUNTRY', 'Country_Decoded','F53','F54','F55','F56']
 
 #a bunch of hand picked qns only one which you want to train. Ensure USE_ALL_DATA=False
 QNS_TO_ADD=['F53','F54','F55','F56','F58']
@@ -70,7 +70,7 @@ log_file_name=os.path.join(os.getcwd(),"logs/",git_details['repo_short_sha']+".l
 logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(name)s -   %(message)s",
     datefmt="%m/%d/%Y %H:%M:%S",
-    level=logging.DEBUG ,
+    level=logging.INFO ,
     filename=log_file_name,
     filemode='w'
 )
@@ -160,17 +160,29 @@ else:
 
     if (MULTI_LABEL==True):
         #todo remove all -1..i.e remove the household who didnt answer qn you are trying to predict..-do this for f58 (whatever qn you are predicting)
-        model=MultiOutputClassifier(model).fit(x_train, y_train_gold)
+        model=MultiOutputClassifier(model).fit(x_train_selected, y_train_gold)
         y_dev_pred = model.predict(x_dev)
-        #print(y_dev_pred)
-        #print(f"shape of y_dev_pred={y_dev_pred.shape}")
         #todo print classification report per columns..
         #todo: dont take average across rows or columns
         all_acc=np.zeros(y_dev_pred.shape[0])
-        for index,each_row in enumerate(y_dev_pred):
-            acc = accuracy_score(y_dev_gold[index], each_row)
-            all_acc[index]=acc
-        print(f"average accuracy across all multi label class predictions={np.mean(all_acc)}")
+        #print accuracy per label
+        multilabelFeature_accuracy={}
+        for index,each_column in enumerate(y_dev_pred.T):
+            acc = accuracy_score(y_dev_gold.T[index], each_column)
+            multilabelFeature_accuracy[index]=acc
+            logger.debug("\n")
+            logger.debug(
+                f"****Classification Report when using {type(model).__name__}*** for COUNTRY={COUNTRY} and question to predict={SURVEY_QN_TO_PREDICT} ")
+            logger.debug(classification_report(y_dev_gold.T[index], each_column))
+            logger.debug("\n")
+            logger.debug("****Confusion Matrix***")
+
+            cm = confusion_matrix(y_dev_gold.T[index], each_column)
+            logger.debug(cm)
+            logger.debug("\n")
+            logger.debug("****True Positive etc***")
+            logger.debug('(tn, fp, fn, tp)')
+            logger.debug(cm.ravel())
 
     else:
         model.fit(x_train_selected, y_train_gold)
@@ -200,6 +212,9 @@ if(DO_FEATURE_SELECTION==True):
     for k,v in (feature_accuracy.items()):
         logger.info(f"{k}\t{v}")
 else:
-    print(f"accuracy={acc}")
+    if (MULTI_LABEL == True):
+        logger.info("Feature Column\t accuracy")
+        for k, v in (multilabelFeature_accuracy.items()):
+            logger.info(f"{k}\t{v}")
 
 
