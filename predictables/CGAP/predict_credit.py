@@ -27,7 +27,7 @@ from sklearn.neighbors import KNeighborsClassifier
 COUNTRY='bgd'
 #if you know the survey qn allows for multiple answers from farmer, ensure MULTI_LABEL=True.
 #todo: do that using code
-SURVEY_QN_TO_PREDICT= "F53"
+SURVEY_QN_TO_PREDICT= "F58"
 MULTI_LABEL=True
 RANDOM_SEED=3252
 TOTAL_FEATURE_COUNT=29
@@ -70,7 +70,7 @@ log_file_name=os.path.join(os.getcwd(),"logs/",git_details['repo_short_sha']+".l
 logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(name)s -   %(message)s",
     datefmt="%m/%d/%Y %H:%M:%S",
-    level=logging.INFO ,
+    level=logging.DEBUG ,
     filename=log_file_name,
     filemode='w'
 )
@@ -89,12 +89,17 @@ if(USE_ALL_DATA==True):
     df2 = bgd.concat_all_multiple_answer_qns(QNS_TO_AVOID)
     assert len(df1) == len(df2)
     df_combined = pd.concat([df1, df2], axis=1)
-    df_combined = df_combined.fillna(FILL_NAN_WITH)
 else:
     df1=bgd.concat_all_single_answer_qns_to_add(QNS_TO_ADD)
     df2=bgd.concat_all_multiple_answer_qns_to_add(QNS_TO_ADD)
     df_combined = pd.concat([df1, df2], axis=1)
-    df_combined=df_combined.fillna(-1)
+
+
+#if a farmer's reply to the intended qn to predict is nan, then drop that farmer.
+df_combined=df_combined.loc[pd.notna(df_combined[SURVEY_QN_TO_PREDICT])]
+#fill the rest of all nan with some value you pick
+df_combined = df_combined.fillna(FILL_NAN_WITH)
+
 
 
 train,test_dev=train_test_split(df_combined,  test_size=0.2,shuffle=True)
@@ -170,8 +175,9 @@ else:
             column_name=y_dev_gold.columns[index]
             multilabelFeature_accuracy[column_name]=acc
             logger.debug("\n")
+            logger.debug("**********************************************************************************")
             logger.debug(
-                f"****Classification Report when using {type(model).__name__}*** for COUNTRY={COUNTRY} and question to predict={SURVEY_QN_TO_PREDICT} ")
+                f"****Classification Report when using {type(model).__name__}*** for COUNTRY={COUNTRY} and question to predict={SURVEY_QN_TO_PREDICT} for column name {column_name}")
             logger.debug(classification_report(y_dev_gold_selected.T[index], each_column))
             logger.debug("\n")
             logger.debug("****Confusion Matrix***")
