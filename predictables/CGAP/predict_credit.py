@@ -28,22 +28,21 @@ COUNTRY='bgd'
 #if you know the survey qn allows for multiple answers from farmer, ensure MULTI_LABEL=True.
 #todo: do that using code
 SURVEY_QN_TO_PREDICT= "F58"
-MULTI_LABEL=True
+MULTI_LABEL=False
 RANDOM_SEED=3252
-TOTAL_FEATURE_COUNT=29
+
 FEATURE_SELECTION_ALGOS=["SelectKBest"]
 FILL_NAN_WITH=-1
 
-
-DO_FEATURE_SELECTION=False #ensure multi_label is False. doing feature selection in multi label is yet to be implemented as of june 12th 2021
+DO_FEATURE_SELECTION=True
 USE_ALL_DATA=True
-#when training using all qns in the survey are there any qns you would want the classifier not to train on.
-# e.g., housekeeping columns like Country_Decoded. or if you want to remove handpicked qns , you add them to the list here
-QNS_TO_AVOID = ['COUNTRY', 'Country_Decoded']
-#QNS_TO_AVOID = ['COUNTRY', 'Country_Decoded','F53','F54','F55','F56']
+TOTAL_FEATURE_COUNT=50
+QNS_TO_AVOID = ['COUNTRY', 'Country_Decoded','F53','F54','F55','F56']
 
-#a bunch of hand picked qns only one which you want to train. Ensure USE_ALL_DATA=False
-QNS_TO_ADD=['F53','F54','F55','F56','F58']
+
+#Notes:
+# QNS_TO_AVOID = ['COUNTRY', 'Country_Decoded','F53','F54','F55','F56']
+# ['COUNTRY', 'Country_Decoded']=housekeeping columns
 
 
 random.seed(RANDOM_SEED)
@@ -65,7 +64,6 @@ def get_git_info():
     return repo_infos
 
 git_details=get_git_info()
-os.path.join
 log_file_name=os.path.join(os.getcwd(),"logs/",git_details['repo_short_sha']+".log")
 logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(name)s -   %(message)s",
@@ -113,9 +111,9 @@ if MULTI_LABEL==True:
     y_dev_gold = dev.filter(regex=(SURVEY_QN_TO_PREDICT + "_*"))
     x_dev=dev.drop(y_dev_gold.columns, axis=1)
 else:
-    y_train_gold_selected=(train[SURVEY_QN_TO_PREDICT])
+    y_train_gold=(train[SURVEY_QN_TO_PREDICT])
     x_train =train.drop(SURVEY_QN_TO_PREDICT,axis=1)
-    y_dev_gold_selected=np.asarray(dev[SURVEY_QN_TO_PREDICT])
+    y_dev_gold=np.asarray(dev[SURVEY_QN_TO_PREDICT])
     x_dev=dev.drop(SURVEY_QN_TO_PREDICT, axis=1)
 
 #model = MLPClassifier(solver='sgd', alpha=1e-5,hidden_layer_sizes=(5, 2), random_state=1)
@@ -124,18 +122,18 @@ else:
 #model = tree.DecisionTreeClassifier()
 #model = RandomForestClassifier(n_estimators=10)
 #model = Perceptron(tol=1e-3, random_state=0)
-model = svm.SVC()
+#model = svm.SVC()
 #model = SGDClassifier(loss="hinge", penalty="l2", max_iter=5)
 #model = GaussianNB()
-#model = GradientBoostingClassifier(n_estimators=100, learning_rate=1.0,max_depth=1, random_state=0)
+model = GradientBoostingClassifier(n_estimators=100, learning_rate=1.0,max_depth=1, random_state=0)
 #model = MLkNN(k=20)
-#model=neighbors.KNeighborsClassifier()
-
+best_feature_accuracy=0
+final_best_combination_of_features={}
 if(DO_FEATURE_SELECTION==True):
     feature_accuracy = {}
     for feature_count in range(1, TOTAL_FEATURE_COUNT):
         selectK = SelectKBest(mutual_info_classif, k=feature_count)
-        selectK.fit(x_train, y_train_gold_selected)
+        selectK.fit(x_train, y_train_gold)
         selectMask=selectK.get_support()
         best_feature_indices = np.where(selectMask)[0].tolist()
         best_features = []
@@ -153,13 +151,18 @@ if(DO_FEATURE_SELECTION==True):
         model.fit(x_train_selected, y_train_gold_selected)
         y_dev_pred = model.predict(x_dev_selected)
         acc = accuracy_score(y_dev_gold_selected, y_dev_pred)
-        if (DO_FEATURE_SELECTION == True):
-            feature_accuracy[feature_count] = (str(acc), ",".join(best_features))
+        if(acc>best_feature_accuracy):
+            best_feature_accuracy=acc
+            final_best_combination_of_features["best_features"] = ("feature_count:",str(feature_count),"\naccuracy:",str(acc),"\nfeatures:", ",".join(best_features))
+        # if (DO_FEATURE_SELECTION == True):
+        #     feature_accuracy[feature_count] = (str(acc), ",".join(best_features))
 else:
     x_train_selected = np.asarray(x_train)
     x_dev_selected = np.asarray(x_dev)
     y_train_gold_selected = np.asarray(y_train_gold)
     y_dev_gold_selected = np.asarray(y_dev_gold)
+
+
 
 
 
@@ -214,8 +217,7 @@ else:
 
 if(DO_FEATURE_SELECTION==True):
     logger.info("Number of k best features\t accuracy:feature list")
-    for k,v in (feature_accuracy.items()):
-        logger.info(f"{k}\t{v}")
+    print(final_best_combination_of_features)
 else:
     if (MULTI_LABEL == True):
         logger.info("Feature Column\t\taccuracy")
