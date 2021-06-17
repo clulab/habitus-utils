@@ -34,10 +34,9 @@ RANDOM_SEED=3252
 FEATURE_SELECTION_ALGOS=["SelectKBest"]
 FILL_NAN_WITH=-1
 
-DO_FEATURE_SELECTION=True
+DO_FEATURE_SELECTION=False
 USE_ALL_DATA=True
-TOTAL_FEATURE_COUNT=50
-QNS_TO_AVOID = ['COUNTRY', 'Country_Decoded','F53','F54','F55','F56']
+QNS_TO_AVOID = ['COUNTRY', 'Country_Decoded']
 
 
 #Notes:
@@ -80,9 +79,7 @@ Data.read_and_decode('/Users/mordor/research/habitus_project/mycode/predictables
 bgd = Country_Decoded(COUNTRY,Data)
 
 
-#use only a couple of hand picked qns during training
 if(USE_ALL_DATA==True):
-    # use all qns from survey in training sans whatever you want to avoid
     df1 = bgd.concat_all_single_answer_qns(QNS_TO_AVOID)
     df2 = bgd.concat_all_multiple_answer_qns(QNS_TO_AVOID)
     assert len(df1) == len(df2)
@@ -92,9 +89,13 @@ else:
     df2=bgd.concat_all_multiple_answer_qns_to_add(QNS_TO_ADD)
     df_combined = pd.concat([df1, df2], axis=1)
 
+#drop rows which has all values as na
+df_combined=df_combined.dropna(how='all')
 
 #if a farmer's reply to the intended qn to predict is nan, then drop that farmer.
-df_combined=df_combined.loc[pd.notna(df_combined[SURVEY_QN_TO_PREDICT])]
+cols_qn_to_predict = df_combined.filter(regex=(SURVEY_QN_TO_PREDICT + "_*")).columns
+df_combined = df_combined.dropna(how='all', subset=cols_qn_to_predict)
+
 #fill the rest of all nan with some value you pick
 df_combined = df_combined.fillna(FILL_NAN_WITH)
 
@@ -154,8 +155,6 @@ if(DO_FEATURE_SELECTION==True):
         if(acc>best_feature_accuracy):
             best_feature_accuracy=acc
             final_best_combination_of_features["best_features"] = ("feature_count:",str(feature_count),"\naccuracy:",str(acc),"\nfeatures:", ",".join(best_features))
-        # if (DO_FEATURE_SELECTION == True):
-        #     feature_accuracy[feature_count] = (str(acc), ",".join(best_features))
 else:
     x_train_selected = np.asarray(x_train)
     x_dev_selected = np.asarray(x_dev)
@@ -171,7 +170,6 @@ else:
         model=MultiOutputClassifier(model).fit(x_train_selected, y_train_gold_selected)
         y_dev_pred = model.predict(x_dev)
         all_acc=np.zeros(y_dev_pred.shape[0])
-        #print accuracy per label
         multilabelFeature_accuracy={}
         for index,each_column in enumerate(y_dev_pred.T):
             acc = accuracy_score(y_dev_gold_selected.T[index], each_column)
