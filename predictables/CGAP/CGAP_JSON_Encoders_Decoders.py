@@ -259,6 +259,12 @@ class Country_Decoded (CGAP_Decoded):
             if v.qtype == 'multi' or v.qtype == "multiple":
                 label = v.label
                 if (label not in qns_to_avoid):
+                    # attach the column name as qn_subtpe. eg: A5_Rice
+                    new_cols = []
+                    for c in v.df.columns:
+                        new_col_name = label + "_" + c
+                        new_cols.append(new_col_name)
+                    v.df.columns = new_cols
                     for sub_qn in (v.df):
                         v_df_scaled = scale_min_max(v.df[sub_qn])
                         df = pd.concat([df, v_df_scaled], axis=1)
@@ -272,6 +278,12 @@ class Country_Decoded (CGAP_Decoded):
             if v.qtype == 'multi' or v.qtype=="multiple":
                 label = v.label
                 if (label in qns_to_add):
+                    # attach the column name as qn_subtpe. eg: A5_Rice
+                    new_cols = []
+                    for c in v.df.columns:
+                        new_col_name = label + "_" + c
+                        new_cols.append(new_col_name)
+                    v.df.columns = new_cols
                     for sub_qn in (v.df):
                         v_df_scaled = scale_min_max(v.df[sub_qn])
                         df = pd.concat([df, v_df_scaled], axis=1)
