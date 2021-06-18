@@ -25,18 +25,20 @@ from sklearn.multioutput import MultiOutputClassifier
 from sklearn.neighbors import KNeighborsClassifier
 
 COUNTRY='bgd'
-#if you know the survey qn allows for multiple answers from farmer, ensure MULTI_LABEL=True.
-#todo: do that using code
-SURVEY_QN_TO_PREDICT= "F58"
-MULTI_LABEL=False
+#if you know the survey qn allows for multiple answers from farmer, ensure MULTI_LABEL=True.#todo: do that using code
+
+
 RANDOM_SEED=3252
 
 FEATURE_SELECTION_ALGOS=["SelectKBest"]
 FILL_NAN_WITH=-1
 
-DO_FEATURE_SELECTION=False
+DO_FEATURE_SELECTION=True
 USE_ALL_DATA=True
-QNS_TO_AVOID = ['COUNTRY', 'Country_Decoded']
+TOTAL_FEATURE_COUNT=2
+QNS_TO_AVOID = ['COUNTRY', 'Country_Decoded','A53','A57','A56','HH1','HH_WEIGHT','HH7','A47_storage','A49_storage','A47_storage']
+SURVEY_QN_TO_PREDICT="A52"
+MULTI_LABEL=False
 
 
 #Notes:
@@ -79,6 +81,7 @@ Data.read_and_decode('/Users/mordor/research/habitus_project/mycode/predictables
 bgd = Country_Decoded(COUNTRY,Data)
 
 
+
 if(USE_ALL_DATA==True):
     df1 = bgd.concat_all_single_answer_qns(QNS_TO_AVOID)
     df2 = bgd.concat_all_multiple_answer_qns(QNS_TO_AVOID)
@@ -89,6 +92,18 @@ else:
     df2=bgd.concat_all_multiple_answer_qns_to_add(QNS_TO_ADD)
     df_combined = pd.concat([df1, df2], axis=1)
 
+def find_majority_baseline(data,column):
+    row_count=data[column].shape[0]
+    yays=(data.loc[data[column]==1]).shape[0]
+    nays=row_count-yays
+    if yays>nays:
+        return yays*100/row_count
+    else:
+        return nays*100/row_count
+
+
+baseline=find_majority_baseline(df_combined,SURVEY_QN_TO_PREDICT)
+logger.info(f"majority baseline={baseline}")
 #drop rows which has all values as na
 df_combined=df_combined.dropna(how='all')
 
@@ -166,7 +181,6 @@ else:
 
 
     if (MULTI_LABEL==True):
-        #todo remove all -1..i.e remove the household who didnt answer qn you are trying to predict..-do this for f58 (whatever qn you are predicting)
         model=MultiOutputClassifier(model).fit(x_train_selected, y_train_gold_selected)
         y_dev_pred = model.predict(x_dev)
         all_acc=np.zeros(y_dev_pred.shape[0])
@@ -215,11 +229,14 @@ else:
 
 if(DO_FEATURE_SELECTION==True):
     logger.info("Number of k best features\t accuracy:feature list")
-    print(final_best_combination_of_features)
+    logger.info(final_best_combination_of_features)
 else:
     if (MULTI_LABEL == True):
+        all_accuracies=[]
         logger.info("Feature Column\t\taccuracy")
         for k, v in (multilabelFeature_accuracy.items()):
             logger.info(f"{k}\t\t\t{v}")
+            all_accuracies.append(v)
+        logger.debug(f"average of all columns={np.mean(all_accuracies)}")
 
 
