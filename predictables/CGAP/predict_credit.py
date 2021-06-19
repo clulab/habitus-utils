@@ -29,6 +29,7 @@ COUNTRY='bgd'
 
 
 RANDOM_SEED=3252
+RUN_ON_SERVER=True
 
 FEATURE_SELECTION_ALGOS=["SelectKBest"]
 FILL_NAN_WITH=-1
@@ -75,11 +76,18 @@ logging.basicConfig(
 )
 logging.getLogger().addHandler(logging.StreamHandler())
 
-sys.path.append('/Users/mordor/research/habitus_project/mycode/predictables/Data/Data Objects/Code and Notebooks')
-Data = CGAP_Decoded()
-Data.read_and_decode('/Users/mordor/research/habitus_project/mycode/predictables/Data/Data Objects/CGAP_JSON.txt')
-bgd = Country_Decoded(COUNTRY,Data)
+if(RUN_ON_SERVER==True):
+    sys.path.append('/work/mithunpaul/habitus/clustering/habitus_clulab_repo/predictables/CGAP/Data/Data Objects/Code and Notebooks')
+    Data = CGAP_Decoded()
+    Data.read_and_decode('/work/mithunpaul/habitus/clustering/habitus_clulab_repo/predictables/CGAP/Data/Data Objects/CGAP_JSON.txt')
+else:
+    sys.path.append('/Users/mordor/research/habitus_project/mycode/predictables/Data/Data Objects/Code and Notebooks')
+    Data = CGAP_Decoded()
+    Data.read_and_decode('/Users/mordor/research/habitus_project/mycode/predictables/Data/Data Objects/CGAP_JSON.txt')
 
+
+
+bgd = Country_Decoded(COUNTRY,Data)
 
 
 if(USE_ALL_DATA==True):
