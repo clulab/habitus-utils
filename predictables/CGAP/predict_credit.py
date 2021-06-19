@@ -36,14 +36,15 @@ FILL_NAN_WITH=-1
 
 DO_FEATURE_SELECTION=True
 USE_ALL_DATA=True
-TOTAL_FEATURE_COUNT=592
-QNS_TO_AVOID = ['COUNTRY', 'Country_Decoded','A53','A57','A56','HH1','HH_WEIGHT','HH7','A47','A49','A47_storage','A49_storage','A48','HH6']
-SURVEY_QN_TO_PREDICT="A52"
+TOTAL_FEATURE_COUNT=635
+QNS_TO_AVOID = ['COUNTRY', 'Country_Decoded','A11','A12','A13',
+               'A14','HH1','HH2','HH3','HH4','HH5','HH6','HH7','HH_WEIGHT','A24_livestock_care']
+SURVEY_QN_TO_PREDICT="A10"
 MULTI_LABEL=False
 
 
+
 #Notes:
-# QNS_TO_AVOID = ['COUNTRY', 'Country_Decoded','F53','F54','F55','F56']
 # ['COUNTRY', 'Country_Decoded']=housekeeping columns
 
 
