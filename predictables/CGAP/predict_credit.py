@@ -29,17 +29,17 @@ COUNTRY='bgd'
 
 
 RANDOM_SEED=3252
-RUN_ON_SERVER=True
+RUN_ON_SERVER=False
 
 FEATURE_SELECTION_ALGOS=["SelectKBest"]
 FILL_NAN_WITH=-1
 
-DO_FEATURE_SELECTION=True
+DO_FEATURE_SELECTION=False
 USE_ALL_DATA=True
 TOTAL_FEATURE_COUNT=680
 QNS_TO_AVOID = ['COUNTRY', 'Country_Decoded']
-SURVEY_QN_TO_PREDICT="A18"
-MULTI_LABEL=False
+SURVEY_QN_TO_PREDICT="F53"
+MULTI_LABEL=True
 
 
 
@@ -100,18 +100,28 @@ else:
     df2=bgd.concat_all_multiple_answer_qns_to_add(QNS_TO_ADD)
     df_combined = pd.concat([df1, df2], axis=1)
 
-def find_majority_baseline(data,column):
-    row_count=data[column].shape[0]
-    yays=(data.loc[data[column]==1]).shape[0]
+def find_majority_baseline_binary(data, column_name):
+    row_count=data[column_name].shape[0]
+    yays=(data.loc[data[column_name] == 1]).shape[0]
     nays=row_count-yays
     if yays>nays:
         return yays*100/row_count
     else:
         return nays*100/row_count
 
+def find_majority_baseline_binary_given_binary_column(column):
+    row_count=len(column)
+    yays=column.sum()
+    nays=row_count-yays
+    if yays>nays:
+        return ("yes",yays*100/row_count)
+    else:
+        return ("no",nays*100/row_count)
 
-baseline=find_majority_baseline(df_combined,SURVEY_QN_TO_PREDICT)
-logger.info(f"majority baseline={baseline}")
+
+if not MULTI_LABEL==True:
+    baseline=find_majority_baseline_binary(df_combined, SURVEY_QN_TO_PREDICT)
+    logger.info(f"majority baseline={baseline}")
 #drop rows which has all values as na
 df_combined=df_combined.dropna(how='all')
 
@@ -189,23 +199,27 @@ else:
 
 
     if (MULTI_LABEL==True):
+
         model=MultiOutputClassifier(model).fit(x_train_selected, y_train_gold_selected)
         y_dev_pred = model.predict(x_dev)
         all_acc=np.zeros(y_dev_pred.shape[0])
         multilabelFeature_accuracy={}
-        for index,each_column in enumerate(y_dev_pred.T):
-            acc = accuracy_score(y_dev_gold_selected.T[index], each_column)
+        for index, each_pred_column in enumerate(y_dev_pred.T):
+            # find majority class baseline for dev
+            maj_class,maj_class_baseline=find_majority_baseline_binary_given_binary_column(y_dev_gold_selected.T[index])
+            acc = accuracy_score(y_dev_gold_selected.T[index], each_pred_column)
             column_name=y_dev_gold.columns[index]
-            multilabelFeature_accuracy[column_name]=acc
+            multilabelFeature_accuracy[column_name]=(acc,maj_class_baseline,maj_class)
             logger.debug("\n")
             logger.debug("**********************************************************************************")
             logger.debug(
                 f"****Classification Report when using {type(model).__name__}*** for COUNTRY={COUNTRY} and question to predict={SURVEY_QN_TO_PREDICT} for column name {column_name}")
-            logger.debug(classification_report(y_dev_gold_selected.T[index], each_column))
+            logger.debug(f"Majority class={maj_class}; Majority baseline={maj_class_baseline}")
+            logger.debug(classification_report(y_dev_gold_selected.T[index], each_pred_column))
             logger.debug("\n")
             logger.debug("****Confusion Matrix***")
 
-            cm = confusion_matrix(y_dev_gold_selected.T[index], each_column)
+            cm = confusion_matrix(y_dev_gold_selected.T[index], each_pred_column)
             logger.debug(cm)
             logger.debug("\n")
             logger.debug("****True Positive etc***")
@@ -241,10 +255,10 @@ if(DO_FEATURE_SELECTION==True):
 else:
     if (MULTI_LABEL == True):
         all_accuracies=[]
-        logger.info("Feature Column\t\taccuracy")
+        logger.info("Feature Column\t\taccuracy\tmajority baseline\tmajority class")
         for k, v in (multilabelFeature_accuracy.items()):
-            logger.info(f"{k}\t\t\t{v}")
+            logger.info(f"{k}\t\t{round(v[0],2)}\t{v[1]}\t{v[2]}")
             all_accuracies.append(v)
-        logger.debug(f"average of all columns={np.mean(all_accuracies)}")
+        #logger.debug(f"average of all columns={np.mean(all_accuracies)}")
 
 
