@@ -24,7 +24,7 @@ from sklearn.datasets import make_multilabel_classification
 from sklearn.multioutput import MultiOutputClassifier
 from sklearn.neighbors import KNeighborsClassifier
 
-COUNTRY='bgd'
+COUNTRY='moz'
 #if you know the survey qn allows for multiple answers from farmer, ensure MULTI_LABEL=True.#todo: do that using code
 
 
@@ -34,12 +34,13 @@ RUN_ON_SERVER=False
 FEATURE_SELECTION_ALGOS=["SelectKBest"]
 FILL_NAN_WITH=-1
 
-DO_FEATURE_SELECTION=False
+TOTAL_FEATURE_COUNT=2
+DO_FEATURE_SELECTION=True
 USE_ALL_DATA=True
-TOTAL_FEATURE_COUNT=680
-QNS_TO_AVOID = ['COUNTRY', 'Country_Decoded']
-SURVEY_QN_TO_PREDICT="F53"
-MULTI_LABEL=True
+QNS_TO_AVOID = ['COUNTRY', 'Country_Decoded','F53','F54','F55','F56','F46_VLSA']
+SURVEY_QN_TO_PREDICT= "F58"
+MULTI_LABEL=False
+
 
 
 
@@ -105,9 +106,10 @@ def find_majority_baseline_binary(data, column_name):
     yays=(data.loc[data[column_name] == 1]).shape[0]
     nays=row_count-yays
     if yays>nays:
-        return yays*100/row_count
+        return ("yes",yays*100/row_count)
+
     else:
-        return nays*100/row_count
+        return ("no", nays * 100 / row_count)
 
 def find_majority_baseline_binary_given_binary_column(column):
     row_count=len(column)
@@ -120,8 +122,8 @@ def find_majority_baseline_binary_given_binary_column(column):
 
 
 if not MULTI_LABEL==True:
-    baseline=find_majority_baseline_binary(df_combined, SURVEY_QN_TO_PREDICT)
-    logger.info(f"majority baseline={baseline}")
+    maj_class,baseline=find_majority_baseline_binary(df_combined, SURVEY_QN_TO_PREDICT)
+    logger.info(f"majority baseline={baseline}, majority class={maj_class}")
 #drop rows which has all values as na
 df_combined=df_combined.dropna(how='all')
 
@@ -150,7 +152,7 @@ else:
     y_dev_gold=np.asarray(dev[SURVEY_QN_TO_PREDICT])
     x_dev=dev.drop(SURVEY_QN_TO_PREDICT, axis=1)
 
-#model = MLPClassifier(solver='sgd', alpha=1e-5,hidden_layer_sizes=(5, 2), random_state=1)
+model = MLPClassifier(solver='sgd', alpha=1e-5,hidden_layer_sizes=(5, 2), random_state=1)
 #model=neighbors.KNeighborsClassifier()
 #model = LogisticRegression()
 #model = tree.DecisionTreeClassifier()
@@ -159,7 +161,7 @@ else:
 #model = svm.SVC()
 #model = SGDClassifier(loss="hinge", penalty="l2", max_iter=5)
 #model = GaussianNB()
-model = GradientBoostingClassifier(n_estimators=100, learning_rate=1.0,max_depth=1, random_state=0)
+#model = GradientBoostingClassifier(n_estimators=100, learning_rate=1.0,max_depth=1, random_state=0)
 #model = MLkNN(k=20)
 best_feature_accuracy=0
 final_best_combination_of_features={}
@@ -255,9 +257,17 @@ if(DO_FEATURE_SELECTION==True):
 else:
     if (MULTI_LABEL == True):
         all_accuracies=[]
-        logger.info("Feature Column\t\taccuracy\tmajority baseline\tmajority class")
+        header1_formatted="{:<20}".format("Feature Column")
+        header2_formatted="{:<20}".format("Accuracy")
+        header3_formatted = "{:<20}".format("Majority Baseline")
+        header4_formatted = "{:<20}".format("Majority Class")
+        logger.info(f"{header1_formatted}\t{header2_formatted}\t{header3_formatted}\t{header4_formatted}\t")
         for k, v in (multilabelFeature_accuracy.items()):
-            logger.info(f"{k}\t\t{round(v[0],2)}\t{v[1]}\t{v[2]}")
+            k_formatted="{:<20}".format(str(k))
+            v0_formatted = "{:<20}".format(str(round(v[0],2)))
+            v1_formatted = "{:<20}".format(str(round(v[1], 2)))
+            v2_formatted = "{:<20}".format(str((v[2])))
+            logger.info(f"{k_formatted}\t{v0_formatted}\t{v1_formatted}\t{v2_formatted}")
             all_accuracies.append(v)
         #logger.debug(f"average of all columns={np.mean(all_accuracies)}")
 
