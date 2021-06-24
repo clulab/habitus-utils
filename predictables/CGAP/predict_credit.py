@@ -37,7 +37,7 @@ FILL_NAN_WITH=-1
 TOTAL_FEATURE_COUNT=2
 DO_FEATURE_SELECTION=True
 USE_ALL_DATA=True
-QNS_TO_AVOID = ['COUNTRY', 'Country_Decoded','F53','F54','F55','F56','F46_VLSA']
+QNS_TO_AVOID = ['COUNTRY', 'Country_Decoded']
 SURVEY_QN_TO_PREDICT= "F58"
 MULTI_LABEL=False
 
@@ -152,7 +152,7 @@ else:
     y_dev_gold=np.asarray(dev[SURVEY_QN_TO_PREDICT])
     x_dev=dev.drop(SURVEY_QN_TO_PREDICT, axis=1)
 
-model = MLPClassifier(solver='sgd', alpha=1e-5,hidden_layer_sizes=(5, 2), random_state=1)
+#model = MLPClassifier(solver='sgd', alpha=1e-5,hidden_layer_sizes=(5, 2), random_state=1)
 #model=neighbors.KNeighborsClassifier()
 #model = LogisticRegression()
 #model = tree.DecisionTreeClassifier()
@@ -161,7 +161,7 @@ model = MLPClassifier(solver='sgd', alpha=1e-5,hidden_layer_sizes=(5, 2), random
 #model = svm.SVC()
 #model = SGDClassifier(loss="hinge", penalty="l2", max_iter=5)
 #model = GaussianNB()
-#model = GradientBoostingClassifier(n_estimators=100, learning_rate=1.0,max_depth=1, random_state=0)
+model = GradientBoostingClassifier(n_estimators=100, learning_rate=1.0,max_depth=1, random_state=0)
 #model = MLkNN(k=20)
 best_feature_accuracy=0
 final_best_combination_of_features={}

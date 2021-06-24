@@ -233,10 +233,10 @@ class Country_Decoded (CGAP_Decoded):
         for k,v in tqdm(self.__dict__.items(),total=len(self.__dict__.items()),desc="single_ans") :
             if v.qtype=='single':
                 label=v.label
+                if("F58" in k):
+                    print("found f58")
                 if (label not in qns_to_avoid):
-                    if("HH7" in k):
-                        print("found hh7")
-                    if isinstance((v.df[label]._values[0]), (int, float)):
+                    if not (type(v.df[label]._values[0])==str):
                         v_df_scaled=scale_min_max(v.df[label])
                         df = pd.concat([df, v_df_scaled], axis=1)
         assert df is not None
@@ -249,7 +249,7 @@ class Country_Decoded (CGAP_Decoded):
                 if v.qtype == 'single':
                     label = v.label
                     if (label in qns_to_add):
-                        if isinstance((v.df[label]._values[0]), (int, float)):
+                        if not (type(v.df[label]._values[0]) == str):
                             v_df_scaled = scale_min_max(v.df[label])
                             df = pd.concat([df, v_df_scaled], axis=1)
             assert df is not None
@@ -270,7 +270,6 @@ class Country_Decoded (CGAP_Decoded):
                         new_cols.append(new_col_name)
                     v.df.columns = new_cols
                     for sub_qn in (v.df):
-                        if isinstance((v.df[sub_qn]._values[0]), (int, float)):
                             v_df_scaled = scale_min_max(v.df[sub_qn])
                             df = pd.concat([df, v_df_scaled], axis=1)
         assert df is not None
@@ -290,7 +289,6 @@ class Country_Decoded (CGAP_Decoded):
                         new_cols.append(new_col_name)
                     v.df.columns = new_cols
                     for sub_qn in (v.df):
-                        if isinstance((v.df[sub_qn]._values[0]), (int, float)):
                             v_df_scaled = scale_min_max(v.df[sub_qn])
                             df = pd.concat([df, v_df_scaled], axis=1)
         return df
