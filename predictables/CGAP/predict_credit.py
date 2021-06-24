@@ -24,7 +24,7 @@ from sklearn.datasets import make_multilabel_classification
 from sklearn.multioutput import MultiOutputClassifier
 from sklearn.neighbors import KNeighborsClassifier
 
-COUNTRY='moz'
+COUNTRY='bgd'
 #if you know the survey qn allows for multiple answers from farmer, ensure MULTI_LABEL=True.#todo: do that using code
 
 

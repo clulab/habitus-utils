@@ -234,6 +234,8 @@ class Country_Decoded (CGAP_Decoded):
             if v.qtype=='single':
                 label=v.label
                 if (label not in qns_to_avoid):
+                    if("HH7" in k):
+                        print("found hh7")
                     v_df_scaled=scale_min_max(v.df[label])
                     df = pd.concat([df, v_df_scaled], axis=1)
         assert df is not None
