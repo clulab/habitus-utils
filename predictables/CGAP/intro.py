@@ -17,7 +17,9 @@ import numpy as np
 import pandas as pd
 
 # Change this filepath to one for your machine
-sys.path.append('/Users/prcohen/anaconda2/envs/aPRAM/Habitus/Data/CGAP/Data/Data Objects/Code and Notebooks')
+
+sys.path.append('/Users/mordor/research/habitus_project/mycode/predictables/Data/Data Objects/Code and Notebooks')
+
 
 from CGAP_JSON_Encoders_Decoders import Question_Decoder, CGAP_Encoded, CGAP_Decoded, Country_Decoded
 
@@ -26,7 +28,8 @@ from CGAP_JSON_Encoders_Decoders import Question_Decoder, CGAP_Encoded, CGAP_Dec
 # folder at https://pitt.app.box.com/folder/136317983622
 
 Data = CGAP_Decoded()
-Data.read_and_decode('/Users/prcohen/anaconda2/envs/aPRAM/Habitus/Data/CGAP/Data/Data Objects/CGAP_JSON.txt')
+#Data.read_and_decode('/Users/prcohen/anaconda2/envs/aPRAM/Habitus/Data/CGAP/Data/Data Objects/CGAP_JSON.txt')
+Data.read_and_decode('/Users/mordor/research/habitus_project/mycode/predictables/Data/Data Objects/CGAP_JSON.txt')
 
 countries = ['bgd','cdi','moz','nga','tan','uga']
 

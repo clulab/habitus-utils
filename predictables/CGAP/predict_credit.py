@@ -24,23 +24,27 @@ from sklearn.datasets import make_multilabel_classification
 from sklearn.multioutput import MultiOutputClassifier
 from sklearn.neighbors import KNeighborsClassifier
 
-COUNTRY='bgd'
-#if you know the survey qn allows for multiple answers from farmer, ensure MULTI_LABEL=True.
-#todo: do that using code
-SURVEY_QN_TO_PREDICT= "F58"
-MULTI_LABEL=False
+COUNTRY='moz'
+#if you know the survey qn allows for multiple answers from farmer, ensure MULTI_LABEL=True.#todo: do that using code
+
+
 RANDOM_SEED=3252
+RUN_ON_SERVER=False
 
 FEATURE_SELECTION_ALGOS=["SelectKBest"]
 FILL_NAN_WITH=-1
 
-DO_FEATURE_SELECTION=False
+TOTAL_FEATURE_COUNT=2
+DO_FEATURE_SELECTION=True
 USE_ALL_DATA=True
-QNS_TO_AVOID = ['COUNTRY', 'Country_Decoded']
+QNS_TO_AVOID = ['COUNTRY', 'Country_Decoded','F53','F54','F55','F56','F46_VLSA']
+SURVEY_QN_TO_PREDICT= "F58"
+MULTI_LABEL=False
+
+
 
 
 #Notes:
-# QNS_TO_AVOID = ['COUNTRY', 'Country_Decoded','F53','F54','F55','F56']
 # ['COUNTRY', 'Country_Decoded']=housekeeping columns
 
 
@@ -73,9 +77,17 @@ logging.basicConfig(
 )
 logging.getLogger().addHandler(logging.StreamHandler())
 
-sys.path.append('/Users/mordor/research/habitus_project/mycode/predictables/Data/Data Objects/Code and Notebooks')
-Data = CGAP_Decoded()
-Data.read_and_decode('/Users/mordor/research/habitus_project/mycode/predictables/Data/Data Objects/CGAP_JSON.txt')
+if(RUN_ON_SERVER==True):
+    sys.path.append('/work/mithunpaul/habitus/clustering/habitus_clulab_repo/predictables/CGAP/Data/Data Objects/Code and Notebooks')
+    Data = CGAP_Decoded()
+    Data.read_and_decode('/work/mithunpaul/habitus/clustering/habitus_clulab_repo/predictables/CGAP/Data/Data Objects/CGAP_JSON.txt')
+else:
+    sys.path.append('/Users/mordor/research/habitus_project/mycode/predictables/Data/Data Objects/Code and Notebooks')
+    Data = CGAP_Decoded()
+    Data.read_and_decode('/Users/mordor/research/habitus_project/mycode/predictables/Data/Data Objects/CGAP_JSON.txt')
+
+
+
 bgd = Country_Decoded(COUNTRY,Data)
 
 
@@ -89,6 +101,29 @@ else:
     df2=bgd.concat_all_multiple_answer_qns_to_add(QNS_TO_ADD)
     df_combined = pd.concat([df1, df2], axis=1)
 
+def find_majority_baseline_binary(data, column_name):
+    row_count=data[column_name].shape[0]
+    yays=(data.loc[data[column_name] == 1]).shape[0]
+    nays=row_count-yays
+    if yays>nays:
+        return ("yes",yays*100/row_count)
+
+    else:
+        return ("no", nays * 100 / row_count)
+
+def find_majority_baseline_binary_given_binary_column(column):
+    row_count=len(column)
+    yays=column.sum()
+    nays=row_count-yays
+    if yays>nays:
+        return ("yes",yays*100/row_count)
+    else:
+        return ("no",nays*100/row_count)
+
+
+if not MULTI_LABEL==True:
+    maj_class,baseline=find_majority_baseline_binary(df_combined, SURVEY_QN_TO_PREDICT)
+    logger.info(f"majority baseline={baseline}, majority class={maj_class}")
 #drop rows which has all values as na
 df_combined=df_combined.dropna(how='all')
 
@@ -117,7 +152,7 @@ else:
     y_dev_gold=np.asarray(dev[SURVEY_QN_TO_PREDICT])
     x_dev=dev.drop(SURVEY_QN_TO_PREDICT, axis=1)
 
-#model = MLPClassifier(solver='sgd', alpha=1e-5,hidden_layer_sizes=(5, 2), random_state=1)
+model = MLPClassifier(solver='sgd', alpha=1e-5,hidden_layer_sizes=(5, 2), random_state=1)
 #model=neighbors.KNeighborsClassifier()
 #model = LogisticRegression()
 #model = tree.DecisionTreeClassifier()
@@ -126,7 +161,7 @@ else:
 #model = svm.SVC()
 #model = SGDClassifier(loss="hinge", penalty="l2", max_iter=5)
 #model = GaussianNB()
-model = GradientBoostingClassifier(n_estimators=100, learning_rate=1.0,max_depth=1, random_state=0)
+#model = GradientBoostingClassifier(n_estimators=100, learning_rate=1.0,max_depth=1, random_state=0)
 #model = MLkNN(k=20)
 best_feature_accuracy=0
 final_best_combination_of_features={}
@@ -166,24 +201,27 @@ else:
 
 
     if (MULTI_LABEL==True):
-        #todo remove all -1..i.e remove the household who didnt answer qn you are trying to predict..-do this for f58 (whatever qn you are predicting)
+
         model=MultiOutputClassifier(model).fit(x_train_selected, y_train_gold_selected)
         y_dev_pred = model.predict(x_dev)
         all_acc=np.zeros(y_dev_pred.shape[0])
         multilabelFeature_accuracy={}
-        for index,each_column in enumerate(y_dev_pred.T):
-            acc = accuracy_score(y_dev_gold_selected.T[index], each_column)
+        for index, each_pred_column in enumerate(y_dev_pred.T):
+            # find majority class baseline for dev
+            maj_class,maj_class_baseline=find_majority_baseline_binary_given_binary_column(y_dev_gold_selected.T[index])
+            acc = accuracy_score(y_dev_gold_selected.T[index], each_pred_column)
             column_name=y_dev_gold.columns[index]
-            multilabelFeature_accuracy[column_name]=acc
+            multilabelFeature_accuracy[column_name]=(acc,maj_class_baseline,maj_class)
             logger.debug("\n")
             logger.debug("**********************************************************************************")
             logger.debug(
                 f"****Classification Report when using {type(model).__name__}*** for COUNTRY={COUNTRY} and question to predict={SURVEY_QN_TO_PREDICT} for column name {column_name}")
-            logger.debug(classification_report(y_dev_gold_selected.T[index], each_column))
+            logger.debug(f"Majority class={maj_class}; Majority baseline={maj_class_baseline}")
+            logger.debug(classification_report(y_dev_gold_selected.T[index], each_pred_column))
             logger.debug("\n")
             logger.debug("****Confusion Matrix***")
 
-            cm = confusion_matrix(y_dev_gold_selected.T[index], each_column)
+            cm = confusion_matrix(y_dev_gold_selected.T[index], each_pred_column)
             logger.debug(cm)
             logger.debug("\n")
             logger.debug("****True Positive etc***")
@@ -215,11 +253,22 @@ else:
 
 if(DO_FEATURE_SELECTION==True):
     logger.info("Number of k best features\t accuracy:feature list")
-    print(final_best_combination_of_features)
+    logger.info(final_best_combination_of_features)
 else:
     if (MULTI_LABEL == True):
-        logger.info("Feature Column\t\taccuracy")
+        all_accuracies=[]
+        header1_formatted="{:<20}".format("Feature Column")
+        header2_formatted="{:<20}".format("Accuracy")
+        header3_formatted = "{:<20}".format("Majority Baseline")
+        header4_formatted = "{:<20}".format("Majority Class")
+        logger.info(f"{header1_formatted}\t{header2_formatted}\t{header3_formatted}\t{header4_formatted}\t")
         for k, v in (multilabelFeature_accuracy.items()):
-            logger.info(f"{k}\t\t\t{v}")
+            k_formatted="{:<20}".format(str(k))
+            v0_formatted = "{:<20}".format(str(round(v[0],2)))
+            v1_formatted = "{:<20}".format(str(round(v[1], 2)))
+            v2_formatted = "{:<20}".format(str((v[2])))
+            logger.info(f"{k_formatted}\t{v0_formatted}\t{v1_formatted}\t{v2_formatted}")
+            all_accuracies.append(v)
+        #logger.debug(f"average of all columns={np.mean(all_accuracies)}")
 
 
