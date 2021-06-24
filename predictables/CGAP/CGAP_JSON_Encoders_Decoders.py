@@ -236,8 +236,9 @@ class Country_Decoded (CGAP_Decoded):
                 if (label not in qns_to_avoid):
                     if("HH7" in k):
                         print("found hh7")
-                    v_df_scaled=scale_min_max(v.df[label])
-                    df = pd.concat([df, v_df_scaled], axis=1)
+                    if isinstance((v.df[label]._values[0]), (int, float)):
+                        v_df_scaled=scale_min_max(v.df[label])
+                        df = pd.concat([df, v_df_scaled], axis=1)
         assert df is not None
         return df
 
@@ -248,8 +249,9 @@ class Country_Decoded (CGAP_Decoded):
                 if v.qtype == 'single':
                     label = v.label
                     if (label in qns_to_add):
-                        v_df_scaled = scale_min_max(v.df[label])
-                        df = pd.concat([df, v_df_scaled], axis=1)
+                        if isinstance((v.df[label]._values[0]), (int, float)):
+                            v_df_scaled = scale_min_max(v.df[label])
+                            df = pd.concat([df, v_df_scaled], axis=1)
             assert df is not None
             return df
 
@@ -268,8 +270,9 @@ class Country_Decoded (CGAP_Decoded):
                         new_cols.append(new_col_name)
                     v.df.columns = new_cols
                     for sub_qn in (v.df):
-                        v_df_scaled = scale_min_max(v.df[sub_qn])
-                        df = pd.concat([df, v_df_scaled], axis=1)
+                        if isinstance((v.df[sub_qn]._values[0]), (int, float)):
+                            v_df_scaled = scale_min_max(v.df[sub_qn])
+                            df = pd.concat([df, v_df_scaled], axis=1)
         assert df is not None
         return df
 
@@ -287,8 +290,9 @@ class Country_Decoded (CGAP_Decoded):
                         new_cols.append(new_col_name)
                     v.df.columns = new_cols
                     for sub_qn in (v.df):
-                        v_df_scaled = scale_min_max(v.df[sub_qn])
-                        df = pd.concat([df, v_df_scaled], axis=1)
+                        if isinstance((v.df[sub_qn]._values[0]), (int, float)):
+                            v_df_scaled = scale_min_max(v.df[sub_qn])
+                            df = pd.concat([df, v_df_scaled], axis=1)
         return df
 
 
