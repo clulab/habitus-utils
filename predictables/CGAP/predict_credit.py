@@ -23,8 +23,11 @@ import git,logging,os
 from sklearn.datasets import make_multilabel_classification
 from sklearn.multioutput import MultiOutputClassifier
 from sklearn.neighbors import KNeighborsClassifier
+from Data_Objects import DO_Encoder, DO_Decoder, Encoded_DOs, Decoded_DOs, Decoded_CGAP_DOs
+import matplotlib.pyplot as plt
+import numpy as np
 
-COUNTRY='moz'
+COUNTRY='bgd'
 #if you know the survey qn allows for multiple answers from farmer, ensure MULTI_LABEL=True.#todo: do that using code
 
 
@@ -34,7 +37,7 @@ RUN_ON_SERVER=False
 FEATURE_SELECTION_ALGOS=["SelectKBest"]
 FILL_NAN_WITH=-1
 
-TOTAL_FEATURE_COUNT=2
+TOTAL_FEATURE_COUNT=680
 DO_FEATURE_SELECTION=True
 USE_ALL_DATA=True
 QNS_TO_AVOID = ['COUNTRY', 'Country_Decoded']
@@ -82,13 +85,16 @@ if(RUN_ON_SERVER==True):
     Data = CGAP_Decoded()
     Data.read_and_decode('/work/mithunpaul/habitus/clustering/habitus_clulab_repo/predictables/CGAP/Data/Data Objects/CGAP_JSON.txt')
 else:
-    sys.path.append('/Users/mordor/research/habitus_project/mycode/predictables/Data/Data Objects/Code and Notebooks')
-    Data = CGAP_Decoded()
-    Data.read_and_decode('/Users/mordor/research/habitus_project/mycode/predictables/Data/Data Objects/CGAP_JSON_Old.txt')
+    sys.path.append('/Users/mordor/research/habitus_project/clulab_repo/predictables/Data/data_objects/code_and_notebooks')
+    CGAP = Decoded_CGAP_DOs()
+    filepath='/Users/mordor/research/habitus_project/clulab_repo/predictables/Data/data_objects/'
+    import os
+    CGAP.read_and_decode(os.path.join(filepath , 'cgap_json.txt'))
+    print(CGAP.cols('moz_H6', 'moz_H7'))
 
 
 
-country_name = Country_Decoded(COUNTRY, Data)
+country_name = CGAP_Decoded(COUNTRY, Data)
 
 
 if(USE_ALL_DATA==True):
@@ -174,6 +180,8 @@ best_feature_accuracy=0
 final_best_combination_of_features={}
 if(DO_FEATURE_SELECTION==True):
     feature_accuracy = {}
+    list_features=[]
+    list_accuracy=[]
     for feature_count in range(1, TOTAL_FEATURE_COUNT):
         selectK = SelectKBest(mutual_info_classif, k=feature_count)
         selectK.fit(x_train, y_train_gold)
@@ -185,8 +193,6 @@ if(DO_FEATURE_SELECTION==True):
             best_features.append(x_train.columns[b])
         x_train_selected = x_train.iloc[:,best_feature_indices]
         x_dev_selected = x_dev.iloc[:,best_feature_indices]
-        # x_train_selected = SelectPercentile(chi2, percentile=feature_count).fit_transform(x_train, y_train_gold)
-        # x_dev_selected = SelectPercentile(chi2, percentile=feature_count).fit_transform(x_dev, y_dev_gold)
         x_train_selected=np.asarray(x_train_selected)
         x_dev_selected=np.asarray(x_dev_selected)
         y_train_gold_selected = np.asarray(y_train_gold)
@@ -194,9 +200,20 @@ if(DO_FEATURE_SELECTION==True):
         model.fit(x_train_selected, y_train_gold_selected)
         y_dev_pred = model.predict(x_dev_selected)
         acc = accuracy_score(y_dev_gold_selected, y_dev_pred)
+        list_features.append(feature_count)
+        list_accuracy.append(acc)
         if(acc>best_feature_accuracy):
             best_feature_accuracy=acc
             final_best_combination_of_features["best_features"] = ("feature_count:",str(feature_count),"\naccuracy:",str(acc),"\nfeatures:", ",".join(best_features))
+
+    #plot a figure with number of features as x axis and accuracy as y axis.
+    fig, ax = plt.subplots()
+    assert len(list_features) == len(list_accuracy)
+    print(f"list_features:{list_features}")
+    print(f"list_accuracy:{list_accuracy}")
+    ax.plot(list_features, list_accuracy)
+    plt.show()
+
 else:
     x_train_selected = np.asarray(x_train)
     x_dev_selected = np.asarray(x_dev)
