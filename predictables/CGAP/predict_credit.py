@@ -29,12 +29,12 @@ COUNTRY='bgd'
 
 
 RANDOM_SEED=3252
-RUN_ON_SERVER=False
+RUN_ON_SERVER=True
 
 FEATURE_SELECTION_ALGOS=["SelectKBest"]
 FILL_NAN_WITH=-1
 
-TOTAL_FEATURE_COUNT=2
+TOTAL_FEATURE_COUNT=680
 DO_FEATURE_SELECTION=True
 USE_ALL_DATA=True
 QNS_TO_AVOID = ['COUNTRY', 'Country_Decoded','F53','F54','F55','F56','F46_VLSA']
@@ -152,7 +152,7 @@ else:
     y_dev_gold=np.asarray(dev[SURVEY_QN_TO_PREDICT])
     x_dev=dev.drop(SURVEY_QN_TO_PREDICT, axis=1)
 
-model = MLPClassifier(solver='sgd', alpha=1e-5,hidden_layer_sizes=(5, 2), random_state=1)
+#model = MLPClassifier(solver='sgd', alpha=1e-5,hidden_layer_sizes=(5, 2), random_state=1)
 #model=neighbors.KNeighborsClassifier()
 #model = LogisticRegression()
 #model = tree.DecisionTreeClassifier()
@@ -161,7 +161,7 @@ model = MLPClassifier(solver='sgd', alpha=1e-5,hidden_layer_sizes=(5, 2), random
 #model = svm.SVC()
 #model = SGDClassifier(loss="hinge", penalty="l2", max_iter=5)
 #model = GaussianNB()
-#model = GradientBoostingClassifier(n_estimators=100, learning_rate=1.0,max_depth=1, random_state=0)
+model = GradientBoostingClassifier(n_estimators=100, learning_rate=1.0,max_depth=1, random_state=0)
 #model = MLkNN(k=20)
 
 def get_topn_best_feature_names(selectK,n=20):
@@ -169,19 +169,24 @@ def get_topn_best_feature_names(selectK,n=20):
     features_indices = [x for x in range(0, len(features_scores))]
     zipped = zip(features_scores, features_indices)
     sorted_zipped = sorted(zipped,reverse=True)
-    return sorted_zipped[:20]
+    topk_best_feature_names=[]
+    for (score,index) in sorted_zipped[:20]:
+        topk_best_feature_names.append(x_train.columns[index])
+    return topk_best_feature_names
 
 
-
-
+topn=None
 best_feature_accuracy=0
+best_feature_count=0
+
 final_best_combination_of_features={}
+accuracy_per_feature_count={}
+selecK_best=None
 if(DO_FEATURE_SELECTION==True):
     feature_accuracy = {}
     for feature_count in range(1, TOTAL_FEATURE_COUNT):
         selectK = SelectKBest(mutual_info_classif, k=feature_count)
         selectK.fit(x_train, y_train_gold)
-        topn=get_topn_best_feature_names(selectK)
         selectMask=selectK.get_support()
         best_feature_indices = np.where(selectMask)[0].tolist()
         best_features = []
@@ -199,9 +204,14 @@ if(DO_FEATURE_SELECTION==True):
         model.fit(x_train_selected, y_train_gold_selected)
         y_dev_pred = model.predict(x_dev_selected)
         acc = accuracy_score(y_dev_gold_selected, y_dev_pred)
+        accuracy_per_feature_count[feature_count]=acc
         if(acc>best_feature_accuracy):
+            selecK_best=selectK
             best_feature_accuracy=acc
-            final_best_combination_of_features["best_features"] = ("feature_count:",str(feature_count),"\naccuracy:",str(acc),"\nfeatures:", ",".join(best_features))
+            best_feature_count=feature_count
+
+    assert selecK_best is not None
+    topn = get_topn_best_feature_names(selecK_best, x_train)
 else:
     x_train_selected = np.asarray(x_train)
     x_dev_selected = np.asarray(x_dev)
@@ -264,8 +274,9 @@ else:
 
 
 if(DO_FEATURE_SELECTION==True):
-    logger.info("Number of k best features\t accuracy:feature list")
-    logger.info(final_best_combination_of_features)
+    assert topn is not None
+    topn_str=",".join(topn)
+    logger.info(f"best_feature_count: {str(best_feature_count)} \nbest_feature_accuracy: {str(best_feature_accuracy)} \ntop 20 best features:{topn_str}")
 else:
     if (MULTI_LABEL == True):
         all_accuracies=[]
