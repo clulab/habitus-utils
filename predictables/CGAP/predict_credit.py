@@ -24,7 +24,7 @@ from sklearn.datasets import make_multilabel_classification
 from sklearn.multioutput import MultiOutputClassifier
 from sklearn.neighbors import KNeighborsClassifier
 
-COUNTRY='moz'
+COUNTRY='bgd'
 #if you know the survey qn allows for multiple answers from farmer, ensure MULTI_LABEL=True.#todo: do that using code
 
 
@@ -84,7 +84,7 @@ if(RUN_ON_SERVER==True):
 else:
     sys.path.append('/Users/mordor/research/habitus_project/mycode/predictables/Data/Data Objects/Code and Notebooks')
     Data = CGAP_Decoded()
-    Data.read_and_decode('/Users/mordor/research/habitus_project/mycode/predictables/Data/Data Objects/CGAP_JSON.txt')
+    Data.read_and_decode('/Users/mordor/research/habitus_project/clulab_repo/predictables/Data/data_objects/cgap_json_old.txt')
 
 
 
@@ -163,6 +163,17 @@ model = MLPClassifier(solver='sgd', alpha=1e-5,hidden_layer_sizes=(5, 2), random
 #model = GaussianNB()
 #model = GradientBoostingClassifier(n_estimators=100, learning_rate=1.0,max_depth=1, random_state=0)
 #model = MLkNN(k=20)
+
+def get_topn_best_feature_names(selectK,n=20):
+    features_scores = selectK.scores_
+    features_indices = [x for x in range(0, len(features_scores))]
+    zipped = zip(features_scores, features_indices)
+    sorted_zipped = sorted(zipped,reverse=True)
+    return sorted_zipped[:20]
+
+
+
+
 best_feature_accuracy=0
 final_best_combination_of_features={}
 if(DO_FEATURE_SELECTION==True):
@@ -170,6 +181,7 @@ if(DO_FEATURE_SELECTION==True):
     for feature_count in range(1, TOTAL_FEATURE_COUNT):
         selectK = SelectKBest(mutual_info_classif, k=feature_count)
         selectK.fit(x_train, y_train_gold)
+        topn=get_topn_best_feature_names(selectK)
         selectMask=selectK.get_support()
         best_feature_indices = np.where(selectMask)[0].tolist()
         best_features = []
