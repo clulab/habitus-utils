@@ -25,21 +25,19 @@ from sklearn.multioutput import MultiOutputClassifier
 from sklearn.neighbors import KNeighborsClassifier
 
 COUNTRY='bgd'
+MULTI_LABEL=False
 #if you know the survey qn allows for multiple answers from farmer, ensure MULTI_LABEL=True.#todo: do that using code
-
-
 RANDOM_SEED=3252
-RUN_ON_SERVER=False
+RUN_ON_SERVER=TRUE
 NO_OF_BEST_FEATURES_TO_PRINT=20
 FEATURE_SELECTION_ALGOS=["SelectKBest"]
 FILL_NAN_WITH=-1
-
-TOTAL_FEATURE_COUNT=2
+MAX_BEST_FEATURE_COUNT=654
 DO_FEATURE_SELECTION=True
 USE_ALL_DATA=True
 QNS_TO_AVOID = ['COUNTRY', 'Country_Decoded','F53','F54','F55','F56','F46_VLSA']
 SURVEY_QN_TO_PREDICT= "F58"
-MULTI_LABEL=False
+
 
 
 
@@ -190,7 +188,7 @@ accuracy_per_feature_count={}
 selecK_best=None
 if(DO_FEATURE_SELECTION==True):
     feature_accuracy = {}
-    for feature_count in range(1, TOTAL_FEATURE_COUNT):
+    for feature_count in range(1, MAX_BEST_FEATURE_COUNT):
         selectK = SelectKBest(mutual_info_classif, k=feature_count)
         selectK.fit(x_train, y_train_gold)
         selectMask=selectK.get_support()
@@ -216,8 +214,8 @@ if(DO_FEATURE_SELECTION==True):
             best_feature_accuracy=acc
             best_feature_count=feature_count
     assert selecK_best is not None
-    if(TOTAL_FEATURE_COUNT < NO_OF_BEST_FEATURES_TO_PRINT):
-        topn = get_topn_best_feature_names(selecK_best, x_train, TOTAL_FEATURE_COUNT)
+    if(MAX_BEST_FEATURE_COUNT < NO_OF_BEST_FEATURES_TO_PRINT):
+        topn = get_topn_best_feature_names(selecK_best, x_train, MAX_BEST_FEATURE_COUNT)
     else:
         topn = get_topn_best_feature_names(selecK_best, x_train, NO_OF_BEST_FEATURES_TO_PRINT)
 
