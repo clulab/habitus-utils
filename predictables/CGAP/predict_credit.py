@@ -29,12 +29,12 @@ COUNTRY='bgd'
 
 
 RANDOM_SEED=3252
-RUN_ON_SERVER=True
-
+RUN_ON_SERVER=False
+NO_OF_BEST_FEATURES_TO_PRINT=20
 FEATURE_SELECTION_ALGOS=["SelectKBest"]
 FILL_NAN_WITH=-1
 
-TOTAL_FEATURE_COUNT=680
+TOTAL_FEATURE_COUNT=2
 DO_FEATURE_SELECTION=True
 USE_ALL_DATA=True
 QNS_TO_AVOID = ['COUNTRY', 'Country_Decoded','F53','F54','F55','F56','F46_VLSA']
@@ -121,9 +121,6 @@ def find_majority_baseline_binary_given_binary_column(column):
         return ("no",nays*100/row_count)
 
 
-if not MULTI_LABEL==True:
-    maj_class,baseline=find_majority_baseline_binary(df_combined, SURVEY_QN_TO_PREDICT)
-    logger.info(f"majority baseline={baseline}, majority class={maj_class}")
 #drop rows which has all values as na
 df_combined=df_combined.dropna(how='all')
 
@@ -134,10 +131,19 @@ df_combined = df_combined.dropna(how='all', subset=cols_qn_to_predict)
 #fill the rest of all nan with some value you pick
 df_combined = df_combined.fillna(FILL_NAN_WITH)
 
-
+if not MULTI_LABEL==True:
+    maj_class,baseline=find_majority_baseline_binary(df_combined, SURVEY_QN_TO_PREDICT)
+    logger.info(f"majority baseline all data={baseline}, majority class={maj_class}")
 
 train,test_dev=train_test_split(df_combined,  test_size=0.2,shuffle=True)
 test,dev=train_test_split(test_dev,  test_size=0.5,shuffle=True)
+
+
+if not MULTI_LABEL==True:
+    maj_class_dev,baseline_dev=find_majority_baseline_binary(dev, SURVEY_QN_TO_PREDICT)
+    maj_class_train, baseline_train = find_majority_baseline_binary(train, SURVEY_QN_TO_PREDICT)
+    logger.info(f"majority baseline in dev={baseline_dev}, majority class={maj_class_dev}")
+    logger.info(f"majority baseline in train={baseline_train}, majority class={maj_class_train}")
 
 
 #separate out the gold/qn to predict so that we train only on the rest
@@ -164,14 +170,14 @@ else:
 model = GradientBoostingClassifier(n_estimators=100, learning_rate=1.0,max_depth=1, random_state=0)
 #model = MLkNN(k=20)
 
-def get_topn_best_feature_names(selectK,n=20):
+def get_topn_best_feature_names(selectK,data,n):
     features_scores = selectK.scores_
     features_indices = [x for x in range(0, len(features_scores))]
     zipped = zip(features_scores, features_indices)
     sorted_zipped = sorted(zipped,reverse=True)
     topk_best_feature_names=[]
-    for (score,index) in sorted_zipped[:20]:
-        topk_best_feature_names.append(x_train.columns[index])
+    for (score,index) in sorted_zipped[:n]:
+        topk_best_feature_names.append(data.columns[index])
     return topk_best_feature_names
 
 
@@ -209,21 +215,19 @@ if(DO_FEATURE_SELECTION==True):
             selecK_best=selectK
             best_feature_accuracy=acc
             best_feature_count=feature_count
-
     assert selecK_best is not None
-    topn = get_topn_best_feature_names(selecK_best, x_train)
+    if(TOTAL_FEATURE_COUNT < NO_OF_BEST_FEATURES_TO_PRINT):
+        topn = get_topn_best_feature_names(selecK_best, x_train, TOTAL_FEATURE_COUNT)
+    else:
+        topn = get_topn_best_feature_names(selecK_best, x_train, NO_OF_BEST_FEATURES_TO_PRINT)
+
 else:
     x_train_selected = np.asarray(x_train)
     x_dev_selected = np.asarray(x_dev)
     y_train_gold_selected = np.asarray(y_train_gold)
     y_dev_gold_selected = np.asarray(y_dev_gold)
 
-
-
-
-
     if (MULTI_LABEL==True):
-
         model=MultiOutputClassifier(model).fit(x_train_selected, y_train_gold_selected)
         y_dev_pred = model.predict(x_dev)
         all_acc=np.zeros(y_dev_pred.shape[0])
@@ -276,7 +280,7 @@ else:
 if(DO_FEATURE_SELECTION==True):
     assert topn is not None
     topn_str=",".join(topn)
-    logger.info(f"best_feature_count: {str(best_feature_count)} \nbest_feature_accuracy: {str(best_feature_accuracy)} \ntop 20 best features:{topn_str}")
+    logger.info(f"best_feature_count: {str(best_feature_count)} \nbest_feature_accuracy: {str(best_feature_accuracy)} \ntop best features:{topn_str}")
 else:
     if (MULTI_LABEL == True):
         all_accuracies=[]
