@@ -32,7 +32,7 @@ COUNTRY='bgd'
 
 
 RANDOM_SEED=3252
-RUN_ON_SERVER=False
+RUN_ON_SERVER=True
 
 FEATURE_SELECTION_ALGOS=["SelectKBest"]
 FILL_NAN_WITH=-1
@@ -91,6 +91,7 @@ else:
     import os
     CGAP.read_and_decode(os.path.join(filepath , 'cgap_json.txt'))
     print(CGAP.cols('moz_H6', 'moz_H7'))
+
 
 
 
@@ -176,8 +177,25 @@ else:
 #model = GaussianNB()
 model = GradientBoostingClassifier(n_estimators=100, learning_rate=1.0,max_depth=1, random_state=0)
 #model = MLkNN(k=20)
+
+def get_topn_best_feature_names(selectK,n=20):
+    features_scores = selectK.scores_
+    features_indices = [x for x in range(0, len(features_scores))]
+    zipped = zip(features_scores, features_indices)
+    sorted_zipped = sorted(zipped,reverse=True)
+    topk_best_feature_names=[]
+    for (score,index) in sorted_zipped[:20]:
+        topk_best_feature_names.append(x_train.columns[index])
+    return topk_best_feature_names
+
+
+topn=None
 best_feature_accuracy=0
+best_feature_count=0
+
 final_best_combination_of_features={}
+accuracy_per_feature_count={}
+selecK_best=None
 if(DO_FEATURE_SELECTION==True):
     feature_accuracy = {}
     list_features=[]
@@ -202,9 +220,12 @@ if(DO_FEATURE_SELECTION==True):
         acc = accuracy_score(y_dev_gold_selected, y_dev_pred)
         list_features.append(feature_count)
         list_accuracy.append(acc)
+
+        accuracy_per_feature_count[feature_count]=acc
+
         if(acc>best_feature_accuracy):
+            selecK_best=selectK
             best_feature_accuracy=acc
-            final_best_combination_of_features["best_features"] = ("feature_count:",str(feature_count),"\naccuracy:",str(acc),"\nfeatures:", ",".join(best_features))
 
     #plot a figure with number of features as x axis and accuracy as y axis.
     fig, ax = plt.subplots()
@@ -214,6 +235,11 @@ if(DO_FEATURE_SELECTION==True):
     ax.plot(list_features, list_accuracy)
     plt.show()
 
+
+    best_feature_count=feature_count
+
+    assert selecK_best is not None
+    topn = get_topn_best_feature_names(selecK_best, x_train)
 else:
     x_train_selected = np.asarray(x_train)
     x_dev_selected = np.asarray(x_dev)
@@ -276,8 +302,9 @@ else:
 
 
 if(DO_FEATURE_SELECTION==True):
-    logger.info("Number of k best features\t accuracy:feature list")
-    logger.info(final_best_combination_of_features)
+    assert topn is not None
+    topn_str=",".join(topn)
+    logger.info(f"best_feature_count: {str(best_feature_count)} \nbest_feature_accuracy: {str(best_feature_accuracy)} \ntop 20 best features:{topn_str}")
 else:
     if (MULTI_LABEL == True):
         all_accuracies=[]
