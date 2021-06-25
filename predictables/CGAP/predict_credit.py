@@ -84,21 +84,21 @@ if(RUN_ON_SERVER==True):
 else:
     sys.path.append('/Users/mordor/research/habitus_project/mycode/predictables/Data/Data Objects/Code and Notebooks')
     Data = CGAP_Decoded()
-    Data.read_and_decode('/Users/mordor/research/habitus_project/mycode/predictables/Data/Data Objects/CGAP_JSON.txt')
+    Data.read_and_decode('/Users/mordor/research/habitus_project/mycode/predictables/Data/Data Objects/CGAP_JSON_Old.txt')
 
 
 
-bgd = Country_Decoded(COUNTRY,Data)
+country_name = Country_Decoded(COUNTRY, Data)
 
 
 if(USE_ALL_DATA==True):
-    df1 = bgd.concat_all_single_answer_qns(QNS_TO_AVOID)
-    df2 = bgd.concat_all_multiple_answer_qns(QNS_TO_AVOID)
+    df1 = country_name.concat_all_single_answer_qns(QNS_TO_AVOID)
+    df2 = country_name.concat_all_multiple_answer_qns(QNS_TO_AVOID)
     assert len(df1) == len(df2)
     df_combined = pd.concat([df1, df2], axis=1)
 else:
-    df1=bgd.concat_all_single_answer_qns_to_add(QNS_TO_ADD)
-    df2=bgd.concat_all_multiple_answer_qns_to_add(QNS_TO_ADD)
+    df1=country_name.concat_all_single_answer_qns_to_add(QNS_TO_ADD)
+    df2=country_name.concat_all_multiple_answer_qns_to_add(QNS_TO_ADD)
     df_combined = pd.concat([df1, df2], axis=1)
 
 def find_majority_baseline_binary(data, column_name):
@@ -123,7 +123,7 @@ def find_majority_baseline_binary_given_binary_column(column):
 
 if not MULTI_LABEL==True:
     maj_class,baseline=find_majority_baseline_binary(df_combined, SURVEY_QN_TO_PREDICT)
-    logger.info(f"majority baseline={baseline}, majority class={maj_class}")
+    logger.info(f"majority baseline={baseline}, majority class={maj_class} for all_data")
 #drop rows which has all values as na
 df_combined=df_combined.dropna(how='all')
 
@@ -134,11 +134,18 @@ df_combined = df_combined.dropna(how='all', subset=cols_qn_to_predict)
 #fill the rest of all nan with some value you pick
 df_combined = df_combined.fillna(FILL_NAN_WITH)
 
+if not MULTI_LABEL==True:
+    maj_class,baseline=find_majority_baseline_binary(df_combined, SURVEY_QN_TO_PREDICT)
+    logger.info(f"majority baseline={baseline}, majority class={maj_class} all data without nan")
 
 
 train,test_dev=train_test_split(df_combined,  test_size=0.2,shuffle=True)
 test,dev=train_test_split(test_dev,  test_size=0.5,shuffle=True)
 
+
+if not MULTI_LABEL==True:
+    maj_class,baseline=find_majority_baseline_binary(train, SURVEY_QN_TO_PREDICT)
+    logger.info(f"majority baseline={baseline}, majority class={maj_class} for training data partition")
 
 #separate out the gold/qn to predict so that we train only on the rest
 if MULTI_LABEL==True:

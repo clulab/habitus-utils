@@ -233,8 +233,6 @@ class Country_Decoded (CGAP_Decoded):
         for k,v in tqdm(self.__dict__.items(),total=len(self.__dict__.items()),desc="single_ans") :
             if v.qtype=='single':
                 label=v.label
-                if("F58" in k):
-                    print("found f58")
                 if (label not in qns_to_avoid):
                     if not (type(v.df[label]._values[0])==str):
                         v_df_scaled=scale_min_max(v.df[label])
@@ -270,6 +268,8 @@ class Country_Decoded (CGAP_Decoded):
                         new_cols.append(new_col_name)
                     v.df.columns = new_cols
                     for sub_qn in (v.df):
+                        #if not (type(v.df[label]._values[0]) == str):
+                        if isinstance((v.df[sub_qn]._values[0]), (int, float, np.integer)):
                             v_df_scaled = scale_min_max(v.df[sub_qn])
                             df = pd.concat([df, v_df_scaled], axis=1)
         assert df is not None
@@ -289,6 +289,8 @@ class Country_Decoded (CGAP_Decoded):
                         new_cols.append(new_col_name)
                     v.df.columns = new_cols
                     for sub_qn in (v.df):
+                        #note: this is a datacleanup issue. needs to be fixed in cgap_json.txt
+                        if isinstance(type(v.df[sub_qn]._values[0]),(int,float, np.integer)):
                             v_df_scaled = scale_min_max(v.df[sub_qn])
                             df = pd.concat([df, v_df_scaled], axis=1)
         return df
