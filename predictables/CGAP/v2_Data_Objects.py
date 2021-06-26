@@ -5,7 +5,7 @@ Created on Sat May 29 16:13:39 2021
 
 @author: prcohen
 """
-
+from utils import *
 import sys, os, json
 from types import SimpleNamespace
 import string, copy
@@ -15,7 +15,7 @@ import pandas as pd
 
 from nltk.stem import PorterStemmer
 from nltk.tokenize import sent_tokenize, word_tokenize
-
+from tqdm import tqdm
 sys.path.append('/Users/prcohen/anaconda2/envs/aPRAM/Habitus/Data/Data Objects/Code and Notebooks')
 from data_objects_indexing import extract_words, flatten_strs, stopwords
 
@@ -376,7 +376,49 @@ class Decoded_CGAP_DOs (Decoded_DOs):
         super().__init__()
         
         self.names = None
-    
+
+    def get_all_columns_given_country(self,QNS_TO_AVOID,COUNTRY):
+        df_single = self.concat_all_single_answer_qns(QNS_TO_AVOID, COUNTRY)
+        df_multiple = self.concat_all_single_answer_qns(QNS_TO_AVOID, COUNTRY)
+        df_combined = pd.concat([df_single, df_multiple], axis=1)
+        return df_combined
+
+    def concat_all_multiple_answer_qns(self, qns_to_avoid):
+        df = None
+        for k, v in tqdm(self.__dict__.items(), total=len(self.__dict__.items()), desc="multiple_ans"):
+            if v.qtype == 'multi' or v.qtype == "multiple":
+                label = v.label
+                if (label not in qns_to_avoid):
+                    # attach the column name as qn_subtpe. eg: A5_Rice
+                    new_cols = []
+                    for c in v.df.columns:
+                        new_col_name = label + "_" + c
+                        new_cols.append(new_col_name)
+                    v.df.columns = new_cols
+                    for sub_qn in (v.df):
+                        #if not (type(v.df[label]._values[0]) == str):
+                        if isinstance((v.df[sub_qn]._values[0]), (int, float, np.integer)):
+                            v_df_scaled = scale_min_max(v.df[sub_qn])
+                            df = pd.concat([df, v_df_scaled], axis=1)
+        assert df is not None
+        return df
+
+    # for a given country, get all single answer qn
+    def concat_all_single_answer_qns(self, qns_to_avoid,country):
+        df = None
+        for k, v in tqdm(self.__dict__.items(), total=len(self.__dict__.items()), desc="single_ans"):
+            if v is not None:
+                if country in k:
+                    if v.qtype == 'single':
+                        label = v.label
+                        if (label not in qns_to_avoid):
+                            if("A37" in k):
+                                print("found")
+                            v_df_scaled = scale_min_max(v.df[label])
+                            df = pd.concat([df, v_df_scaled], axis=1)
+        assert df is not None
+        return df
+
     def cols_from_countries (self,*cols,countries):
         
         if self.names is None: 
@@ -401,4 +443,22 @@ class Decoded_CGAP_DOs (Decoded_DOs):
             acc.append( self.cols ( *countrify(cols,country) ) )
             
         return pd.concat(acc)
-        
+
+    def get_all_cols_from_countries(self, *cols, countries):
+
+        if self.names is None:
+            # on the first call to cols_from_countries, make a set of the
+            # question ids minus their country codes
+            self.names = set(["".join(name.split('_')[1:]) for name in self.__dict__.keys() if name != 'term_index'])
+
+        def countrify(names, country):
+
+            c = lambda country, x: country + '_' + x if x in self.names else x
+
+            return [c(country, x) if type(x) not in [list, tuple] else [c(country, y) for y in x] for x in names]
+
+        acc = []
+        for country in countries:
+            acc.append(self.cols(*countrify(cols, country)))
+
+        return pd.concat(acc)

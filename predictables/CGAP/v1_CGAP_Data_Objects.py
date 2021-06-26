@@ -21,6 +21,9 @@ from CGAP_JSON_Encoders_Decoders import Question_Encoder as QE
 from CGAP_JSON_Encoders_Decoders import Question_Decoder, CGAP_Encoded, CGAP_Decoded, Country_Decoded
 
 
+
+
+
 # Encoding and decoding questions to and from JSON
 
  
@@ -32,6 +35,37 @@ def read_csv (path):
 
 #_____________________________________________________________________________
 countries = ['bgd','cdi','moz','nga','tan','uga']
+
+
+
+#mithun wrapping a function around the data reading and conversion
+def get_data():
+    # dict holds survey data; e.g., data_dict['bgd_sr'].shape
+    data_dict = {}
+
+    # read in the single-respondent and reduced multi-respondent data
+    for country in countries:
+        for survey in ['sr', 'rr']:
+            data_dict[country + '_' + survey] = read_csv(country + '_' + survey + '_clean.csv')
+
+    # read in the household survey data
+    filepath = '/Users/prcohen/anaconda2/envs/aPRAM/Habitus/Data/CGAP/Data/Processed Household Data/Level 1/'
+
+    for country in countries:
+        data_dict[country + '_hh'] = read_csv(country + '_level1.csv')
+
+    # Hack so I don't have to change all the code below to add data_dict as an additional parameter
+    def Question_Encoder(**kwargs):
+        return QE(df=data_dict, **kwargs)
+
+    # _____________________________________________________________________________
+    # Really important:  HHID must be the index if we're to re-assemble dataframes
+    # from individual columns
+
+    for country in countries:
+        for survey in ['sr', 'rr', 'hh']:
+            data_dict[country + '_' + survey].set_index('HHID', drop=False, inplace=True)
+
 
 # dict holds survey data; e.g., data_dict['bgd_sr'].shape
 data_dict = {}
