@@ -417,10 +417,15 @@ class Decoded_CGAP_DOs (Decoded_DOs):
                             print(k)
                             if("A13" in k):
                                 print("found")
-                                for x in v.df[label]:
-                                    if type(x)==str:
-                                        print("found str")
-                                v.df[label] = v.df[label].fillna(-1)
+                                #temporary hack- some data values are still strings. cast it to int/float
+                                for index, row in v.df[label].iteritems():
+                                    if (row is not None):
+                                        if (type(row)==str):
+                                            #some values are even string None...not None the object. smh
+                                            if(row=="None"):
+                                                df[label][index]=None
+                                            else:
+                                                df[label][index]=float(row)
                             v_df_scaled = scale_min_max(v.df[label])
                             df = pd.concat([df, v_df_scaled], axis=1)
         assert df is not None
