@@ -404,7 +404,7 @@ class Decoded_CGAP_DOs (Decoded_DOs):
                             df = pd.concat([df, v_df_scaled], axis=1)
         assert df is not None
         return df
-
+    
     # for a given country, get all single answer qn
     def concat_all_single_answer_qns(self, qns_to_avoid,country):
         df = None
@@ -423,9 +423,9 @@ class Decoded_CGAP_DOs (Decoded_DOs):
                                         if (type(row)==str):
                                             #some values are even string None...not None the object. smh
                                             if(row=="None"):
-                                                df[label][index]=None
+                                                v.df[label].at[index]=None
                                             else:
-                                                df[label][index]=float(row)
+                                                v.df[label].at[index]=float(row)
                             v_df_scaled = scale_min_max(v.df[label])
                             df = pd.concat([df, v_df_scaled], axis=1)
         assert df is not None
