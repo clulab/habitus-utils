@@ -234,8 +234,9 @@ class Country_Decoded (CGAP_Decoded):
             if v.qtype=='single':
                 label=v.label
                 if (label not in qns_to_avoid):
-                    v_df_scaled=scale_min_max(v.df[label])
-                    df = pd.concat([df, v_df_scaled], axis=1)
+                    if not (type(v.df[label]._values[0])==str):
+                        v_df_scaled=scale_min_max(v.df[label])
+                        df = pd.concat([df, v_df_scaled], axis=1)
         assert df is not None
         return df
 
@@ -246,8 +247,9 @@ class Country_Decoded (CGAP_Decoded):
                 if v.qtype == 'single':
                     label = v.label
                     if (label in qns_to_add):
-                        v_df_scaled = scale_min_max(v.df[label])
-                        df = pd.concat([df, v_df_scaled], axis=1)
+                        if not (type(v.df[label]._values[0]) == str):
+                            v_df_scaled = scale_min_max(v.df[label])
+                            df = pd.concat([df, v_df_scaled], axis=1)
             assert df is not None
             return df
 
@@ -266,8 +268,10 @@ class Country_Decoded (CGAP_Decoded):
                         new_cols.append(new_col_name)
                     v.df.columns = new_cols
                     for sub_qn in (v.df):
-                        v_df_scaled = scale_min_max(v.df[sub_qn])
-                        df = pd.concat([df, v_df_scaled], axis=1)
+                        #if not (type(v.df[label]._values[0]) == str):
+                        if isinstance((v.df[sub_qn]._values[0]), (int, float, np.integer)):
+                            v_df_scaled = scale_min_max(v.df[sub_qn])
+                            df = pd.concat([df, v_df_scaled], axis=1)
         assert df is not None
         return df
 
@@ -285,8 +289,10 @@ class Country_Decoded (CGAP_Decoded):
                         new_cols.append(new_col_name)
                     v.df.columns = new_cols
                     for sub_qn in (v.df):
-                        v_df_scaled = scale_min_max(v.df[sub_qn])
-                        df = pd.concat([df, v_df_scaled], axis=1)
+                        #note: this is a datacleanup issue. needs to be fixed in cgap_json.txt
+                        if isinstance(type(v.df[sub_qn]._values[0]),(int,float, np.integer)):
+                            v_df_scaled = scale_min_max(v.df[sub_qn])
+                            df = pd.concat([df, v_df_scaled], axis=1)
         return df
 
 
