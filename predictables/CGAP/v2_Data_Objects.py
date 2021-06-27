@@ -393,7 +393,6 @@ class Decoded_CGAP_DOs (Decoded_DOs):
                             if v.qtype == 'multi' or v.qtype == "multiple":
                                 label = v.label
                                 if (label not in qns_to_avoid):
-                                    print(k)
                                     # attach the column name as qn_subtpe. eg: A5_Rice
                                     new_cols = []
                                     for c in v.df.columns:
