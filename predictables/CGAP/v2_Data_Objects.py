@@ -400,10 +400,8 @@ class Decoded_CGAP_DOs (Decoded_DOs):
                                         new_cols.append(new_col_name)
                                     v.df.columns = new_cols
                                     for sub_qn in (v.df):
-                                        #if not (type(v.df[label]._values[0]) == str):
-                                        #if isinstance((v.df[sub_qn]._values[0]), (int, float, np.integer)):
                                             v_df_scaled = scale_min_max(v.df[sub_qn])
-                                    df = pd.concat([df, v_df_scaled], axis=1)
+                                            df = pd.concat([df, v_df_scaled], axis=1)
         assert df is not None
         return df
 

@@ -24,6 +24,7 @@ from v2_Data_Objects import DO_Encoder, DO_Decoder, Encoded_DOs, Decoded_DOs, De
 import matplotlib.pyplot as plt
 import numpy as np
 import sys,os
+from tqdm import tqdm
 
 
 COUNTRY='moz'
@@ -193,7 +194,7 @@ if(DO_FEATURE_SELECTION==True):
     feature_accuracy = {}
     list_features=[]
     list_accuracy=[]
-    for feature_count in range(1, MAX_BEST_FEATURE_COUNT):
+    for feature_count in tqdm(range(1, MAX_BEST_FEATURE_COUNT),desc="best features", total=MAX_BEST_FEATURE_COUNT):
         selectK = SelectKBest(mutual_info_classif, k=feature_count)
         selectK.fit(x_train, y_train_gold)
         selectMask=selectK.get_support()
@@ -213,12 +214,11 @@ if(DO_FEATURE_SELECTION==True):
         acc = accuracy_score(y_dev_gold_selected, y_dev_pred)
         list_features.append(feature_count)
         list_accuracy.append(acc)
-
         accuracy_per_feature_count[feature_count]=acc
-
         if(acc>best_feature_accuracy):
             selecK_best=selectK
             best_feature_accuracy=acc
+            best_feature_count=feature_count
 
     #plot a figure with number of features as x axis and accuracy as y axis.
     fig, ax = plt.subplots()
@@ -226,8 +226,6 @@ if(DO_FEATURE_SELECTION==True):
     ax.plot(list_features, list_accuracy)
     plt.show()
 
-
-    best_feature_count=feature_count
 
     assert selecK_best is not None
     if (MAX_BEST_FEATURE_COUNT < NO_OF_BEST_FEATURES_TO_PRINT):
