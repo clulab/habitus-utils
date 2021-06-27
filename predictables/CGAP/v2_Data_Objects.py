@@ -421,14 +421,17 @@ class Decoded_CGAP_DOs (Decoded_DOs):
         for k, v in tqdm(self.__dict__.items(), total=len(self.__dict__.items()), desc="single_ans"):
             if v is not None:
                 if country in k:
-                    if v.qtype == 'single':
-                        label = v.label
-                        if (label not in qns_to_avoid):
-                            print(k)
-                            #temporary hack- some data values are still strings. cast it to int/float
-                            cleaned_column=self.clean_up(v.df[label])
-                            v_df_scaled = scale_min_max(cleaned_column)
-                            df = pd.concat([df, v_df_scaled], axis=1)
+                    if not v.df.empty:
+                        if v.qtype == 'single':
+                            label = v.label
+                            if (label not in qns_to_avoid):
+                                print(k)
+                                if('H28'in k):
+                                    print("found")
+                                #temporary hack- some data values are still strings. cast it to int/float
+                                cleaned_column=self.clean_up(v.df[label])
+                                v_df_scaled = scale_min_max(cleaned_column)
+                                df = pd.concat([df, v_df_scaled], axis=1)
         assert df is not None
         return df
 
