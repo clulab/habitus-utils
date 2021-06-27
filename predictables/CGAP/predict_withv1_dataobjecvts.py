@@ -33,11 +33,10 @@ COUNTRY='bgd'
 
 RANDOM_SEED=3252
 RUN_ON_SERVER=True
-
 FEATURE_SELECTION_ALGOS=["SelectKBest"]
 FILL_NAN_WITH=-1
-
-TOTAL_FEATURE_COUNT=680
+MAX_BEST_FEATURE_COUNT=654
+NO_OF_BEST_FEATURES_TO_PRINT=680
 DO_FEATURE_SELECTION=True
 USE_ALL_DATA=True
 QNS_TO_AVOID = ['COUNTRY', 'Country_Decoded']
@@ -239,7 +238,11 @@ if(DO_FEATURE_SELECTION==True):
     best_feature_count=feature_count
 
     assert selecK_best is not None
-    topn = get_topn_best_feature_names(selecK_best, x_train)
+    if (MAX_BEST_FEATURE_COUNT < NO_OF_BEST_FEATURES_TO_PRINT):
+        topn = get_topn_best_feature_names(selecK_best, x_train, MAX_BEST_FEATURE_COUNT)
+    else:
+        topn = get_topn_best_feature_names(selecK_best, x_train, NO_OF_BEST_FEATURES_TO_PRINT)
+
 else:
     x_train_selected = np.asarray(x_train)
     x_dev_selected = np.asarray(x_dev)
