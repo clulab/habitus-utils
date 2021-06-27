@@ -379,7 +379,7 @@ class Decoded_CGAP_DOs (Decoded_DOs):
 
     def get_all_columns_given_country(self,QNS_TO_AVOID,COUNTRY):
         df_single = self.concat_all_single_answer_qns(QNS_TO_AVOID, COUNTRY)
-        df_multiple = self.concat_all_single_answer_qns(QNS_TO_AVOID, COUNTRY)
+        df_multiple = self.concat_all_multiple_answer_qns(QNS_TO_AVOID, COUNTRY)
         df_combined = pd.concat([df_single, df_multiple], axis=1)
         return df_combined
 
@@ -388,22 +388,26 @@ class Decoded_CGAP_DOs (Decoded_DOs):
         for k, v in tqdm(self.__dict__.items(), total=len(self.__dict__.items()), desc="multiple_ans"):
             if v is not None:
                 if country in k:
-                    if v.qtype == 'multi' or v.qtype == "multiple":
-                        label = v.label
-                        if (label not in qns_to_avoid):
-                            # attach the column name as qn_subtpe. eg: A5_Rice
-                            new_cols = []
-                            for c in v.df.columns:
-                                new_col_name = label + "_" + c
-                                new_cols.append(new_col_name)
-                            v.df.columns = new_cols
-                            for sub_qn in (v.df):
-                                #if not (type(v.df[label]._values[0]) == str):
-                                if isinstance((v.df[sub_qn]._values[0]), (int, float, np.integer)):
-                                    v_df_scaled = scale_min_max(v.df[sub_qn])
-                            df = pd.concat([df, v_df_scaled], axis=1)
+                    if not "HH" in k:  # most of the qns starting with HH are housekeeping ones and hence usually strings
+                        if not v.df.empty:
+                            if v.qtype == 'multi' or v.qtype == "multiple":
+                                label = v.label
+                                if (label not in qns_to_avoid):
+                                    print(k)
+                                    # attach the column name as qn_subtpe. eg: A5_Rice
+                                    new_cols = []
+                                    for c in v.df.columns:
+                                        new_col_name = label + "_" + c
+                                        new_cols.append(new_col_name)
+                                    v.df.columns = new_cols
+                                    for sub_qn in (v.df):
+                                        #if not (type(v.df[label]._values[0]) == str):
+                                        #if isinstance((v.df[sub_qn]._values[0]), (int, float, np.integer)):
+                                            v_df_scaled = scale_min_max(v.df[sub_qn])
+                                    df = pd.concat([df, v_df_scaled], axis=1)
         assert df is not None
         return df
+
     def clean_up(self,series):
         for index, row in series.iteritems():
             if (row is not None):
@@ -421,17 +425,15 @@ class Decoded_CGAP_DOs (Decoded_DOs):
         for k, v in tqdm(self.__dict__.items(), total=len(self.__dict__.items()), desc="single_ans"):
             if v is not None:
                 if country in k:
-                    if not v.df.empty:
-                        if v.qtype == 'single':
-                            label = v.label
-                            if (label not in qns_to_avoid):
-                                print(k)
-                                if('H28'in k):
-                                    print("found")
-                                #temporary hack- some data values are still strings. cast it to int/float
-                                cleaned_column=self.clean_up(v.df[label])
-                                v_df_scaled = scale_min_max(cleaned_column)
-                                df = pd.concat([df, v_df_scaled], axis=1)
+                    if not "HH" in k: #most of the qns starting with HH are housekeeping ones and hence usually strings
+                        if not v.df.empty:
+                            if v.qtype == 'single':
+                                label = v.label
+                                if (label not in qns_to_avoid):
+                                    #temporary hack- some data values are still strings. cast it to int/float
+                                    cleaned_column=self.clean_up(v.df[label])
+                                    v_df_scaled = scale_min_max(cleaned_column)
+                                    df = pd.concat([df, v_df_scaled], axis=1)
         assert df is not None
         return df
 
