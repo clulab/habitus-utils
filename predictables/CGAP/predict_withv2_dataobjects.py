@@ -37,8 +37,8 @@ DO_FEATURE_SELECTION=True
 USE_ALL_DATA=True
 QNS_TO_AVOID = ['COUNTRY', 'Country_Decoded','D14']
 SURVEY_QN_TO_PREDICT= "F58"
-MAX_BEST_FEATURE_COUNT=3
-NO_OF_BEST_FEATURES_TO_PRINT=20
+MAX_BEST_FEATURE_COUNT=116
+NO_OF_BEST_FEATURES_TO_PRINT=20 #even if the best combination has n features print only top 20
 
 
 
@@ -223,10 +223,8 @@ if(DO_FEATURE_SELECTION==True):
     #plot a figure with number of features as x axis and accuracy as y axis.
     fig, ax = plt.subplots()
     assert len(list_features) == len(list_accuracy)
-    #print(f"list_features:{list_features}")
-    #print(f"list_accuracy:{list_accuracy}")
-    #ax.plot(list_features, list_accuracy)
-    #plt.show()
+    ax.plot(list_features, list_accuracy)
+    plt.show()
 
 
     best_feature_count=feature_count
