@@ -32,12 +32,15 @@ COUNTRY='uga'
 #if you know the survey qn allows for multiple answers from farmer, ensure MULTI_LABEL=True.#todo: do that using code
 MULTI_LABEL=False
 RANDOM_SEED=3252
-
 FEATURE_SELECTION_ALGOS=["SelectKBest"]
 FILL_NAN_WITH=-1
 DO_FEATURE_SELECTION=True
 USE_ALL_DATA=True
+
+#Notes:
+# ['COUNTRY', 'Country_Decoded']=housekeeping columns
 QNS_TO_AVOID = ['COUNTRY', 'Country_Decoded','D14']
+QNS_TO_ADD = ['COUNTRY', 'Country_Decoded','D14',"F1"]
 SURVEY_QN_TO_PREDICT= "F58"
 MAX_BEST_FEATURE_COUNT=10
 NO_OF_BEST_FEATURES_TO_PRINT=20 #even if the best combination has n features print only top 20
@@ -45,8 +48,6 @@ NO_OF_BEST_FEATURES_TO_PRINT=20 #even if the best combination has n features pri
 
 
 
-#Notes:
-# ['COUNTRY', 'Country_Decoded']=housekeeping columns
 
 
 random.seed(RANDOM_SEED)
@@ -203,10 +204,8 @@ if(DO_FEATURE_SELECTION==True):
         selectK.fit(x_train, y_train_gold)
         selectMask=selectK.get_support()
         best_feature_indices = np.where(selectMask)[0].tolist()
-        best_features = []
-        #to get the name of the features to print later
-        for b in best_feature_indices:
-            best_features.append(x_train.columns[b])
+
+
         x_train_selected = x_train.iloc[:,best_feature_indices]
         x_dev_selected = x_dev.iloc[:,best_feature_indices]
         x_train_selected=np.asarray(x_train_selected)
@@ -219,10 +218,13 @@ if(DO_FEATURE_SELECTION==True):
         list_features.append(feature_count)
         list_accuracy.append(acc)
         accuracy_per_feature_count[feature_count]=acc
+
         if(acc>best_feature_accuracy):
             selecK_best=selectK
             best_feature_accuracy=acc
             best_feature_count=feature_count
+
+      
 
     #plot a figure with number of features as x axis and accuracy as y axis.
     #fig, ax = plt.subplots()
