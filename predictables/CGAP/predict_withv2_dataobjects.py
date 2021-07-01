@@ -24,21 +24,23 @@ from v2_Data_Objects import DO_Encoder, DO_Decoder, Encoded_DOs, Decoded_DOs, De
 import matplotlib.pyplot as plt
 import numpy as np
 import sys,os
+from tqdm import tqdm
 
 
-COUNTRY='moz'
+RUN_ON_SERVER=False
+COUNTRY='uga'
 #if you know the survey qn allows for multiple answers from farmer, ensure MULTI_LABEL=True.#todo: do that using code
 MULTI_LABEL=False
 RANDOM_SEED=3252
-RUN_ON_SERVER=False
+
 FEATURE_SELECTION_ALGOS=["SelectKBest"]
 FILL_NAN_WITH=-1
 DO_FEATURE_SELECTION=True
 USE_ALL_DATA=True
 QNS_TO_AVOID = ['COUNTRY', 'Country_Decoded','D14']
 SURVEY_QN_TO_PREDICT= "F58"
-MAX_BEST_FEATURE_COUNT=3
-NO_OF_BEST_FEATURES_TO_PRINT=20
+MAX_BEST_FEATURE_COUNT=10
+NO_OF_BEST_FEATURES_TO_PRINT=20 #even if the best combination has n features print only top 20
 
 
 
@@ -66,20 +68,23 @@ def get_git_info():
     return repo_infos
 
 git_details=get_git_info()
-log_file_name=os.path.join(os.getcwd(),"logs/",git_details['repo_short_sha']+".log")
+log_file_name=COUNTRY+"_"+git_details['repo_short_sha']+".log"
+log_file_path=os.path.join(os.getcwd(),"logs/",log_file_name)
 logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(name)s -   %(message)s",
     datefmt="%m/%d/%Y %H:%M:%S",
     level=logging.DEBUG ,
-    filename=log_file_name,
+    filename=log_file_path,
     filemode='w'
 )
 logging.getLogger().addHandler(logging.StreamHandler())
 CGAP=None
 if(RUN_ON_SERVER==True):
-    sys.path.append('/work/mithunpaul/habitus/clustering/habitus_clulab_repo/predictables/CGAP/Data/Data Objects/Code and Notebooks')
-    Data = CGAP_Decoded()
-    Data.read_and_decode('/work/mithunpaul/habitus/clustering/habitus_clulab_repo/predictables/CGAP/Data/Data Objects/CGAP_JSON.txt')
+    sys.path.append(
+        '/work/mithunpaul/habitus/clustering/habitus_clulab_repo/predictables/CGAP/Data/data_objects/code_and_notebooks')
+    CGAP = Decoded_CGAP_DOs()
+    filepath = '/work/mithunpaul/habitus/clustering/habitus_clulab_repo/predictables/CGAP/Data/data_objects/'
+    CGAP.read_and_decode(os.path.join(filepath, 'cgap_json.txt'))
 else:
     sys.path.append(
         '/Users/mordor/research/habitus_project/clulab_repo/predictables/CGAP/Data/data_objects/code_and_notebooks')
@@ -193,7 +198,7 @@ if(DO_FEATURE_SELECTION==True):
     feature_accuracy = {}
     list_features=[]
     list_accuracy=[]
-    for feature_count in range(1, MAX_BEST_FEATURE_COUNT):
+    for feature_count in tqdm(range(1, MAX_BEST_FEATURE_COUNT),desc="best features", total=MAX_BEST_FEATURE_COUNT):
         selectK = SelectKBest(mutual_info_classif, k=feature_count)
         selectK.fit(x_train, y_train_gold)
         selectMask=selectK.get_support()
@@ -213,23 +218,20 @@ if(DO_FEATURE_SELECTION==True):
         acc = accuracy_score(y_dev_gold_selected, y_dev_pred)
         list_features.append(feature_count)
         list_accuracy.append(acc)
-
         accuracy_per_feature_count[feature_count]=acc
-
         if(acc>best_feature_accuracy):
             selecK_best=selectK
             best_feature_accuracy=acc
+            best_feature_count=feature_count
 
     #plot a figure with number of features as x axis and accuracy as y axis.
-    fig, ax = plt.subplots()
+    #fig, ax = plt.subplots()
     assert len(list_features) == len(list_accuracy)
-    #print(f"list_features:{list_features}")
-    #print(f"list_accuracy:{list_accuracy}")
+    logger.info(f"list_features={list_features}")
+    logger.info(f"list_accuracy={list_accuracy}")
     #ax.plot(list_features, list_accuracy)
     #plt.show()
 
-
-    best_feature_count=feature_count
 
     assert selecK_best is not None
     if (MAX_BEST_FEATURE_COUNT < NO_OF_BEST_FEATURES_TO_PRINT):
