@@ -100,7 +100,7 @@ else:
 
 assert CGAP is not None
 if(USE_ALL_DATA==True):
-    df_combined = CGAP.get_all_columns_given_country(QNS_TO_AVOID,COUNTRY,REGEX_QNS_TO_AVOID)
+    df_combined = CGAP.get_all_columns_given_country(QNS_TO_AVOID,COUNTRY,REGEX_QNS_TO_AVOID,SURVEY_QN_TO_PREDICT)
 else:
     df1=country_name.concat_all_single_answer_qns_to_add(QNS_TO_ADD)
     df2=country_name.concat_all_multiple_answer_qns_to_add(QNS_TO_ADD)
