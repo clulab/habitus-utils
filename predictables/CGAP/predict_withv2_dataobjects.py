@@ -27,7 +27,7 @@ import sys,os
 from tqdm import tqdm
 
 
-RUN_ON_SERVER=False
+RUN_ON_SERVER=True
 COUNTRY='bgd'
 #if you know the survey qn allows for multiple answers from farmer, ensure MULTI_LABEL=True.#todo: do that using code
 MULTI_LABEL=False
@@ -43,7 +43,7 @@ QNS_TO_AVOID = ['COUNTRY', 'Country_Decoded','D14','F+']
 REGEX_QNS_TO_AVOID = ['F+']
 QNS_TO_ADD = ['COUNTRY', 'Country_Decoded','D14',"F1"]
 SURVEY_QN_TO_PREDICT= "F58"
-MAX_BEST_FEATURE_COUNT=10
+MAX_BEST_FEATURE_COUNT=680
 NO_OF_BEST_FEATURES_TO_PRINT=20 #even if the best combination has n features print only top 20
 
 
