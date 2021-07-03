@@ -28,7 +28,7 @@ from tqdm import tqdm
 
 
 RUN_ON_SERVER=True
-COUNTRY='moz'
+COUNTRY='cdi'
 #if you know the survey qn allows for multiple answers from farmer, ensure MULTI_LABEL=True.#todo: do that using code
 MULTI_LABEL=False
 RANDOM_SEED=3252
