@@ -8,7 +8,7 @@ Created on Sat May 29 16:13:39 2021
 from utils import *
 import sys, os, json
 from types import SimpleNamespace
-import string, copy
+import  copy, re
 
 import numpy as np
 import pandas as pd
@@ -377,13 +377,13 @@ class Decoded_CGAP_DOs (Decoded_DOs):
         
         self.names = None
 
-    def get_all_columns_given_country(self,QNS_TO_AVOID,COUNTRY):
-        df_single = self.concat_all_single_answer_qns(QNS_TO_AVOID, COUNTRY)
-        df_multiple = self.concat_all_multiple_answer_qns(QNS_TO_AVOID, COUNTRY)
+    def get_all_columns_given_country(self,QNS_TO_AVOID,COUNTRY,REGEX_QNS_TO_AVOID,SURVEY_QN_TO_PREDICT):
+        df_single = self.concat_all_single_answer_qns(QNS_TO_AVOID, COUNTRY,REGEX_QNS_TO_AVOID,SURVEY_QN_TO_PREDICT)
+        df_multiple = self.concat_all_multiple_answer_qns(QNS_TO_AVOID, COUNTRY,REGEX_QNS_TO_AVOID,SURVEY_QN_TO_PREDICT)
         df_combined = pd.concat([df_single, df_multiple], axis=1)
         return df_combined
 
-    def concat_all_multiple_answer_qns(self, qns_to_avoid,country):
+    def concat_all_multiple_answer_qns(self, qns_to_avoid,country,REGEX_QNS_TO_AVOID,SURVEY_QN_TO_PREDICT):
         df = None
         for k, v in tqdm(self.__dict__.items(), total=len(self.__dict__.items()), desc="multiple_ans"):
             if v is not None:
@@ -392,7 +392,7 @@ class Decoded_CGAP_DOs (Decoded_DOs):
                         if not v.df.empty:
                             if v.qtype == 'multi' or v.qtype == "multiple":
                                 label = v.label
-                                if (label not in qns_to_avoid):
+                                if (label in SURVEY_QN_TO_PREDICT):
                                     # attach the column name as qn_subtpe. eg: A5_Rice
                                     new_cols = []
                                     for c in v.df.columns:
@@ -400,8 +400,20 @@ class Decoded_CGAP_DOs (Decoded_DOs):
                                         new_cols.append(new_col_name)
                                     v.df.columns = new_cols
                                     for sub_qn in (v.df):
-                                            v_df_scaled = scale_min_max(v.df[sub_qn])
-                                            df = pd.concat([df, v_df_scaled], axis=1)
+                                        v_df_scaled = scale_min_max(v.df[sub_qn])
+                                        df = pd.concat([df, v_df_scaled], axis=1)
+                                if (label not in qns_to_avoid):
+                                    for regex in REGEX_QNS_TO_AVOID:
+                                        if not (re.match(regex,label)):
+                                            # attach the column name as qn_subtpe. eg: A5_Rice
+                                            new_cols = []
+                                            for c in v.df.columns:
+                                                new_col_name = label + "_" + c
+                                                new_cols.append(new_col_name)
+                                            v.df.columns = new_cols
+                                            for sub_qn in (v.df):
+                                                    v_df_scaled = scale_min_max(v.df[sub_qn])
+                                                    df = pd.concat([df, v_df_scaled], axis=1)
         assert df is not None
         return df
 
@@ -417,7 +429,7 @@ class Decoded_CGAP_DOs (Decoded_DOs):
         return series
 
     # for a given country, get all single answer qn
-    def concat_all_single_answer_qns(self, qns_to_avoid,country):
+    def concat_all_single_answer_qns(self, qns_to_avoid,country,REGEX_QNS_TO_AVOID,SURVEY_QN_TO_PREDICT):
         df = None
         for k, v in tqdm(self.__dict__.items(), total=len(self.__dict__.items()), desc="single_ans"):
             if v is not None:
@@ -426,11 +438,18 @@ class Decoded_CGAP_DOs (Decoded_DOs):
                         if not v.df.empty:
                             if v.qtype == 'single':
                                 label = v.label
-                                if (label not in qns_to_avoid):
-                                    #temporary hack- some data values are still strings. cast it to int/float
-                                    cleaned_column=self.clean_up(v.df[label])
+                                if (label in SURVEY_QN_TO_PREDICT):
+                                    cleaned_column = self.clean_up(v.df[label])
                                     v_df_scaled = scale_min_max(cleaned_column)
                                     df = pd.concat([df, v_df_scaled], axis=1)
+                                else:
+                                    if (label not in qns_to_avoid):
+                                        for regex in REGEX_QNS_TO_AVOID:
+                                            if not (re.match(regex,label)):
+                                                #temporary hack- some data values are still strings. cast it to int/float
+                                                cleaned_column=self.clean_up(v.df[label])
+                                                v_df_scaled = scale_min_max(cleaned_column)
+                                                df = pd.concat([df, v_df_scaled], axis=1)
         assert df is not None
         return df
 

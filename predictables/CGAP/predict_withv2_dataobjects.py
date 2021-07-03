@@ -27,26 +27,29 @@ import sys,os
 from tqdm import tqdm
 
 
-RUN_ON_SERVER=False
+RUN_ON_SERVER=True
 COUNTRY='uga'
 #if you know the survey qn allows for multiple answers from farmer, ensure MULTI_LABEL=True.#todo: do that using code
 MULTI_LABEL=False
 RANDOM_SEED=3252
-
 FEATURE_SELECTION_ALGOS=["SelectKBest"]
 FILL_NAN_WITH=-1
 DO_FEATURE_SELECTION=True
 USE_ALL_DATA=True
+
+#Notes:
+# ['COUNTRY', 'Country_Decoded']=housekeeping columns
 QNS_TO_AVOID = ['COUNTRY', 'Country_Decoded','D14']
+REGEX_QNS_TO_AVOID = ['F+'] #if you dont know the exact qn name, but want to instead avoid training on a subset. eg. all finance related qns,. i.e starting with F
+QNS_TO_ADD = ['COUNTRY', 'Country_Decoded','D14',"F1"]
 SURVEY_QN_TO_PREDICT= "F58"
-MAX_BEST_FEATURE_COUNT=10
+
+MAX_BEST_FEATURE_COUNT="ALL" #int. else use "ALL" if you want it to find best k features by combining 1 through all "
 NO_OF_BEST_FEATURES_TO_PRINT=20 #even if the best combination has n features print only top 20
 
 
 
 
-#Notes:
-# ['COUNTRY', 'Country_Decoded']=housekeeping columns
 
 
 random.seed(RANDOM_SEED)
@@ -98,7 +101,7 @@ else:
 
 assert CGAP is not None
 if(USE_ALL_DATA==True):
-    df_combined = CGAP.get_all_columns_given_country(QNS_TO_AVOID,COUNTRY)
+    df_combined = CGAP.get_all_columns_given_country(QNS_TO_AVOID,COUNTRY,REGEX_QNS_TO_AVOID,SURVEY_QN_TO_PREDICT)
 else:
     df1=country_name.concat_all_single_answer_qns_to_add(QNS_TO_ADD)
     df2=country_name.concat_all_multiple_answer_qns_to_add(QNS_TO_ADD)
@@ -134,8 +137,13 @@ df_combined=df_combined.dropna(how='all')
 cols_qn_to_predict = df_combined.filter(regex=(SURVEY_QN_TO_PREDICT + "_*")).columns
 df_combined = df_combined.dropna(how='all', subset=cols_qn_to_predict)
 
+
+
 #fill the rest of all nan with some value you pick
 df_combined = df_combined.fillna(FILL_NAN_WITH)
+
+if (MAX_BEST_FEATURE_COUNT)=="ALL":
+    MAX_BEST_FEATURE_COUNT=df_combined.shape[1]
 
 if not MULTI_LABEL==True:
     maj_class,baseline=find_majority_baseline_binary(df_combined, SURVEY_QN_TO_PREDICT)
@@ -203,10 +211,6 @@ if(DO_FEATURE_SELECTION==True):
         selectK.fit(x_train, y_train_gold)
         selectMask=selectK.get_support()
         best_feature_indices = np.where(selectMask)[0].tolist()
-        best_features = []
-        #to get the name of the features to print later
-        for b in best_feature_indices:
-            best_features.append(x_train.columns[b])
         x_train_selected = x_train.iloc[:,best_feature_indices]
         x_dev_selected = x_dev.iloc[:,best_feature_indices]
         x_train_selected=np.asarray(x_train_selected)
@@ -223,6 +227,7 @@ if(DO_FEATURE_SELECTION==True):
             selecK_best=selectK
             best_feature_accuracy=acc
             best_feature_count=feature_count
+
 
     #plot a figure with number of features as x axis and accuracy as y axis.
     #fig, ax = plt.subplots()
