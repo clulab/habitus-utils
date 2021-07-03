@@ -39,11 +39,12 @@ USE_ALL_DATA=True
 
 #Notes:
 # ['COUNTRY', 'Country_Decoded']=housekeeping columns
-QNS_TO_AVOID = ['COUNTRY', 'Country_Decoded','D14','F+']
-REGEX_QNS_TO_AVOID = ['F+']
+QNS_TO_AVOID = ['COUNTRY', 'Country_Decoded','D14']
+REGEX_QNS_TO_AVOID = ['F+'] #if you dont know the exact qn name, but want to instead avoid training on a subset. eg. all finance related qns,. i.e starting with F
 QNS_TO_ADD = ['COUNTRY', 'Country_Decoded','D14',"F1"]
 SURVEY_QN_TO_PREDICT= "F58"
-MAX_BEST_FEATURE_COUNT=680
+
+MAX_BEST_FEATURE_COUNT="ALL" #int. else use "ALL" if you want it to find best k features by combining 1 through all "
 NO_OF_BEST_FEATURES_TO_PRINT=20 #even if the best combination has n features print only top 20
 
 
@@ -140,6 +141,9 @@ df_combined = df_combined.dropna(how='all', subset=cols_qn_to_predict)
 
 #fill the rest of all nan with some value you pick
 df_combined = df_combined.fillna(FILL_NAN_WITH)
+
+if (MAX_BEST_FEATURE_COUNT)=="ALL":
+    MAX_BEST_FEATURE_COUNT=df_combined.shape[1]
 
 if not MULTI_LABEL==True:
     maj_class,baseline=find_majority_baseline_binary(df_combined, SURVEY_QN_TO_PREDICT)
