@@ -25,10 +25,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 import sys,os
 from tqdm import tqdm
+from sklearn.model_selection import KFold
 
 
-RUN_ON_SERVER=True
-COUNTRY='uga'
+RUN_ON_SERVER=False
+COUNTRY='bgd'
 #if you know the survey qn allows for multiple answers from farmer, ensure MULTI_LABEL=True.#todo: do that using code
 MULTI_LABEL=False
 RANDOM_SEED=3252
@@ -37,6 +38,9 @@ FILL_NAN_WITH=-1
 DO_FEATURE_SELECTION=True
 USE_ALL_DATA=True
 
+DO_NFCV=True #do n fold cross validation instead of train,dev, test splits
+N_FOR_NFCV=5 #number of splits for n fold cross validation
+
 #Notes:
 # ['COUNTRY', 'Country_Decoded']=housekeeping columns
 QNS_TO_AVOID = ['COUNTRY', 'Country_Decoded','D14']
@@ -44,7 +48,7 @@ REGEX_QNS_TO_AVOID = ['F+'] #if you dont know the exact qn name, but want to ins
 QNS_TO_ADD = ['COUNTRY', 'Country_Decoded','D14',"F1"]
 SURVEY_QN_TO_PREDICT= "F58"
 
-MAX_BEST_FEATURE_COUNT="ALL" #int. else use "ALL" if you want it to find best k features by combining 1 through all "
+MAX_BEST_FEATURE_COUNT=2 #int. else use "ALL" if you want it to find best k features by combining 1 through all "
 NO_OF_BEST_FEATURES_TO_PRINT=20 #even if the best combination has n features print only top 20
 
 
@@ -142,35 +146,13 @@ df_combined = df_combined.dropna(how='all', subset=cols_qn_to_predict)
 #fill the rest of all nan with some value you pick
 df_combined = df_combined.fillna(FILL_NAN_WITH)
 
-if (MAX_BEST_FEATURE_COUNT)=="ALL":
+if (MAX_BEST_FEATURE_COUNT)=="ALL": #use all features for feature selection. else use the int value as ciel
     MAX_BEST_FEATURE_COUNT=df_combined.shape[1]
 
 if not MULTI_LABEL==True:
     maj_class,baseline=find_majority_baseline_binary(df_combined, SURVEY_QN_TO_PREDICT)
     logger.info(f"majority baseline={baseline}, majority class={maj_class} all data without nan")
 
-
-train,test_dev=train_test_split(df_combined,  test_size=0.2,shuffle=True)
-test,dev=train_test_split(test_dev,  test_size=0.5,shuffle=True)
-
-
-if not MULTI_LABEL==True:
-    maj_class_dev, baseline_dev = find_majority_baseline_binary(dev, SURVEY_QN_TO_PREDICT)
-    maj_class_train, baseline_train = find_majority_baseline_binary(train, SURVEY_QN_TO_PREDICT)
-    logger.info(f"majority baseline in dev={baseline_dev}, majority class={maj_class_dev}")
-    logger.info(f"majority baseline in train={baseline_train}, majority class={maj_class_train}")
-
-#separate out the gold/qn to predict so that we train only on the rest
-if MULTI_LABEL==True:
-    y_train_gold=train.filter(regex=(SURVEY_QN_TO_PREDICT + "_*"))
-    x_train=train.drop(y_train_gold.columns, axis=1)
-    y_dev_gold = dev.filter(regex=(SURVEY_QN_TO_PREDICT + "_*"))
-    x_dev=dev.drop(y_dev_gold.columns, axis=1)
-else:
-    y_train_gold=(train[SURVEY_QN_TO_PREDICT])
-    x_train =train.drop(SURVEY_QN_TO_PREDICT,axis=1)
-    y_dev_gold=np.asarray(dev[SURVEY_QN_TO_PREDICT])
-    x_dev=dev.drop(SURVEY_QN_TO_PREDICT, axis=1)
 
 #model = MLPClassifier(solver='sgd', alpha=1e-5,hidden_layer_sizes=(5, 2), random_state=1)
 #model=neighbors.KNeighborsClassifier()
@@ -184,6 +166,174 @@ else:
 model = GradientBoostingClassifier(n_estimators=100, learning_rate=1.0,max_depth=1, random_state=0)
 #model = MLkNN(k=20)
 
+
+def do_training_predict_given_train_dev_splits(model, train, dev, test):
+    # separate out the gold/qn to predict so that we train only on the rest
+    # we are doing this splitting after train, dev, test split, because we want the data points for predicting qn also to be ssplit/shuffled along with everyone else
+    if MULTI_LABEL == True:
+        y_train = train.filter(regex=(SURVEY_QN_TO_PREDICT + "_*"))
+        x_train = train.drop(y_train.columns, axis=1)
+        y_dev = dev.filter(regex=(SURVEY_QN_TO_PREDICT + "_*"))
+        x_dev = dev.drop(y_dev.columns, axis=1)
+    else:
+        y_train = (train[SURVEY_QN_TO_PREDICT])
+        x_train = train.drop(SURVEY_QN_TO_PREDICT, axis=1)
+        y_dev = np.asarray(dev[SURVEY_QN_TO_PREDICT])
+        x_dev = dev.drop(SURVEY_QN_TO_PREDICT, axis=1)
+
+    if not MULTI_LABEL == True:
+        maj_class_dev, baseline_dev = find_majority_baseline_binary(dev, SURVEY_QN_TO_PREDICT)
+        maj_class_train, baseline_train = find_majority_baseline_binary(train, SURVEY_QN_TO_PREDICT)
+        logger.info(f"majority baseline in dev={baseline_dev}, majority class={maj_class_dev}")
+        logger.info(f"majority baseline in train={baseline_train}, majority class={maj_class_train}")
+
+    topn = None
+    best_feature_accuracy = 0
+    best_feature_count = 0
+    final_best_combination_of_features = {}
+    accuracy_per_feature_count = {}
+    selecK_best = None
+    if (DO_FEATURE_SELECTION == True):
+        feature_accuracy = {}
+        list_features = []
+        list_accuracy = []
+        for feature_count in tqdm(range(1, MAX_BEST_FEATURE_COUNT), desc="best features", total=MAX_BEST_FEATURE_COUNT):
+            selectK = SelectKBest(mutual_info_classif, k=feature_count)
+            selectK.fit(x_train, y_train)
+            selectMask = selectK.get_support()
+            best_feature_indices = np.where(selectMask)[0].tolist()
+            x_train_selected = x_train.iloc[:, best_feature_indices]
+            x_dev_selected = x_dev.iloc[:, best_feature_indices]
+            x_train_selected = np.asarray(x_train_selected)
+            x_dev_selected = np.asarray(x_dev_selected)
+            y_train_gold_selected = np.asarray(y_train)
+            y_dev_gold_selected = np.asarray(y_dev)
+            model.fit(x_train_selected, y_train_gold_selected)
+            y_dev_pred = model.predict(x_dev_selected)
+            acc = accuracy_score(y_dev_gold_selected, y_dev_pred)
+            list_features.append(feature_count)
+            list_accuracy.append(acc)
+            accuracy_per_feature_count[feature_count] = acc
+            if (acc > best_feature_accuracy):
+                selecK_best = selectK
+                best_feature_accuracy = acc
+                best_feature_count = feature_count
+        # plot a figure with number of features as x axis and accuracy as y axis.
+        # fig, ax = plt.subplots()
+        assert len(list_features) == len(list_accuracy)
+        logger.info(f"list_features={list_features}")
+        logger.info(f"list_accuracy={list_accuracy}")
+        # ax.plot(list_features, list_accuracy)
+        # plt.show()
+
+        assert selecK_best is not None
+        if (MAX_BEST_FEATURE_COUNT < NO_OF_BEST_FEATURES_TO_PRINT):
+            topn = get_topn_best_feature_names(selecK_best, x_train, MAX_BEST_FEATURE_COUNT)
+        else:
+            topn = get_topn_best_feature_names(selecK_best, x_train, NO_OF_BEST_FEATURES_TO_PRINT)
+    else:
+        x_train_selected = np.asarray(x_train)
+        x_dev_selected = np.asarray(x_dev)
+        y_train_gold_selected = np.asarray(y_train)
+        y_dev_gold_selected = np.asarray(y_dev)
+
+        if (MULTI_LABEL == True):
+
+            model = MultiOutputClassifier(model).fit(x_train_selected, y_train_gold_selected)
+            y_dev_pred = model.predict(x_dev)
+            all_acc = np.zeros(y_dev_pred.shape[0])
+            multilabelFeature_accuracy = {}
+            for index, each_pred_column in enumerate(y_dev_pred.T):
+                # find majority class baseline for dev
+                maj_class, maj_class_baseline = find_majority_baseline_binary_given_binary_column(
+                    y_dev_gold_selected.T[index])
+                acc = accuracy_score(y_dev_gold_selected.T[index], each_pred_column)
+                column_name = y_dev.columns[index]
+                multilabelFeature_accuracy[column_name] = (acc, maj_class_baseline, maj_class)
+                logger.debug("\n")
+                logger.debug("**********************************************************************************")
+                logger.debug(
+                    f"****Classification Report when using {type(model).__name__}*** for COUNTRY={COUNTRY} and question to predict={SURVEY_QN_TO_PREDICT} for column name {column_name}")
+                logger.debug(f"Majority class={maj_class}; Majority baseline={maj_class_baseline}")
+                logger.debug(classification_report(y_dev_gold_selected.T[index], each_pred_column))
+                logger.debug("\n")
+                logger.debug("****Confusion Matrix***")
+
+                cm = confusion_matrix(y_dev_gold_selected.T[index], each_pred_column)
+                logger.debug(cm)
+                logger.debug("\n")
+                logger.debug("****True Positive etc***")
+                logger.debug('(tn, fp, fn, tp)')
+                logger.debug(cm.ravel())
+
+        else:
+            model.fit(x_train_selected, y_train_gold_selected)
+            y_dev_pred = model.predict(x_dev_selected)
+            acc = accuracy_score(y_dev_gold_selected, y_dev_pred)
+
+            logger.debug("\n")
+            logger.debug(
+                f"****Classification Report when using {type(model).__name__}*** for COUNTRY={COUNTRY} and question to predict={SURVEY_QN_TO_PREDICT} ")
+            logger.debug(classification_report(y_dev_gold_selected, y_dev_pred))
+            logger.debug("\n")
+            logger.debug("****Confusion Matrix***")
+            labels_in = [0, 1]
+            logger.debug(f"yes\tno")
+
+            cm = confusion_matrix(y_dev_gold_selected, y_dev_pred, labels=labels_in)
+            logger.debug(cm)
+            logger.debug("\n")
+            logger.debug("****True Positive etc***")
+            logger.debug('(tn, fp, fn, tp)')
+            logger.debug(cm.ravel())
+            acc = accuracy_score(y_dev_gold_selected, y_dev_pred)
+
+    if (DO_FEATURE_SELECTION == True):
+        assert topn is not None
+        topn_str = ",".join(topn)
+        logger.info(
+            f"best_feature_count: {str(best_feature_count)} \nbest_feature_accuracy: {str(best_feature_accuracy)} \ntop best features:{topn_str}")
+    else:
+        if (MULTI_LABEL == True):
+            all_accuracies = []
+            header1_formatted = "{:<20}".format("Feature Column")
+            header2_formatted = "{:<20}".format("Accuracy")
+            header3_formatted = "{:<20}".format("Majority Baseline")
+            header4_formatted = "{:<20}".format("Majority Class")
+            logger.info(f"{header1_formatted}\t{header2_formatted}\t{header3_formatted}\t{header4_formatted}\t")
+            for k, v in (multilabelFeature_accuracy.items()):
+                k_formatted = "{:<20}".format(str(k))
+                v0_formatted = "{:<20}".format(str(round(v[0], 2)))
+                v1_formatted = "{:<20}".format(str(round(v[1], 2)))
+                v2_formatted = "{:<20}".format(str((v[2])))
+                logger.info(f"{k_formatted}\t{v0_formatted}\t{v1_formatted}\t{v2_formatted}")
+                all_accuracies.append(v)
+            # logger.debug(f"average of all columns={np.mean(all_accuracies)}")
+
+
+
+train= test =dev = None
+if (DO_NFCV == True):
+    kf = KFold(n_splits=N_FOR_NFCV)
+    kf.get_n_splits(df_combined)
+    for train_index,test_index in kf.split(df_combined):
+        train=df_combined.iloc[[train_index]]
+        dev=df_combined.iloc[[test_index]] #using the word dev for maintaining consistency with non nfcv world
+        do_training_predict_given_train_dev_splits(model, train, dev, test)
+
+else:
+    train, test_dev = train_test_split(df_combined, test_size=0.2, shuffle=True)
+    test, dev = train_test_split(test_dev, test_size=0.5, shuffle=True)
+
+    assert train is not None
+    assert test is not None
+    assert dev is not None
+
+    do_training_predict_given_train_dev_splits(model, train, dev, test)
+
+
+
+
 def get_topn_best_feature_names(selectK,data,n):
     features_scores = selectK.scores_
     features_indices = [x for x in range(0, len(features_scores))]
@@ -195,136 +345,10 @@ def get_topn_best_feature_names(selectK,data,n):
     return topk_best_feature_names
 
 
-topn=None
-best_feature_accuracy=0
-best_feature_count=0
-
-final_best_combination_of_features={}
-accuracy_per_feature_count={}
-selecK_best=None
-if(DO_FEATURE_SELECTION==True):
-    feature_accuracy = {}
-    list_features=[]
-    list_accuracy=[]
-    for feature_count in tqdm(range(1, MAX_BEST_FEATURE_COUNT),desc="best features", total=MAX_BEST_FEATURE_COUNT):
-        selectK = SelectKBest(mutual_info_classif, k=feature_count)
-        selectK.fit(x_train, y_train_gold)
-        selectMask=selectK.get_support()
-        best_feature_indices = np.where(selectMask)[0].tolist()
-        x_train_selected = x_train.iloc[:,best_feature_indices]
-        x_dev_selected = x_dev.iloc[:,best_feature_indices]
-        x_train_selected=np.asarray(x_train_selected)
-        x_dev_selected=np.asarray(x_dev_selected)
-        y_train_gold_selected = np.asarray(y_train_gold)
-        y_dev_gold_selected = np.asarray(y_dev_gold)
-        model.fit(x_train_selected, y_train_gold_selected)
-        y_dev_pred = model.predict(x_dev_selected)
-        acc = accuracy_score(y_dev_gold_selected, y_dev_pred)
-        list_features.append(feature_count)
-        list_accuracy.append(acc)
-        accuracy_per_feature_count[feature_count]=acc
-        if(acc>best_feature_accuracy):
-            selecK_best=selectK
-            best_feature_accuracy=acc
-            best_feature_count=feature_count
-
-
-    #plot a figure with number of features as x axis and accuracy as y axis.
-    #fig, ax = plt.subplots()
-    assert len(list_features) == len(list_accuracy)
-    logger.info(f"list_features={list_features}")
-    logger.info(f"list_accuracy={list_accuracy}")
-    #ax.plot(list_features, list_accuracy)
-    #plt.show()
-
-
-    assert selecK_best is not None
-    if (MAX_BEST_FEATURE_COUNT < NO_OF_BEST_FEATURES_TO_PRINT):
-        topn = get_topn_best_feature_names(selecK_best, x_train, MAX_BEST_FEATURE_COUNT)
-    else:
-        topn = get_topn_best_feature_names(selecK_best, x_train, NO_OF_BEST_FEATURES_TO_PRINT)
-
-else:
-    x_train_selected = np.asarray(x_train)
-    x_dev_selected = np.asarray(x_dev)
-    y_train_gold_selected = np.asarray(y_train_gold)
-    y_dev_gold_selected = np.asarray(y_dev_gold)
 
 
 
 
 
-    if (MULTI_LABEL==True):
-
-        model=MultiOutputClassifier(model).fit(x_train_selected, y_train_gold_selected)
-        y_dev_pred = model.predict(x_dev)
-        all_acc=np.zeros(y_dev_pred.shape[0])
-        multilabelFeature_accuracy={}
-        for index, each_pred_column in enumerate(y_dev_pred.T):
-            # find majority class baseline for dev
-            maj_class,maj_class_baseline=find_majority_baseline_binary_given_binary_column(y_dev_gold_selected.T[index])
-            acc = accuracy_score(y_dev_gold_selected.T[index], each_pred_column)
-            column_name=y_dev_gold.columns[index]
-            multilabelFeature_accuracy[column_name]=(acc,maj_class_baseline,maj_class)
-            logger.debug("\n")
-            logger.debug("**********************************************************************************")
-            logger.debug(
-                f"****Classification Report when using {type(model).__name__}*** for COUNTRY={COUNTRY} and question to predict={SURVEY_QN_TO_PREDICT} for column name {column_name}")
-            logger.debug(f"Majority class={maj_class}; Majority baseline={maj_class_baseline}")
-            logger.debug(classification_report(y_dev_gold_selected.T[index], each_pred_column))
-            logger.debug("\n")
-            logger.debug("****Confusion Matrix***")
-
-            cm = confusion_matrix(y_dev_gold_selected.T[index], each_pred_column)
-            logger.debug(cm)
-            logger.debug("\n")
-            logger.debug("****True Positive etc***")
-            logger.debug('(tn, fp, fn, tp)')
-            logger.debug(cm.ravel())
-
-    else:
-        model.fit(x_train_selected, y_train_gold_selected)
-        y_dev_pred = model.predict(x_dev_selected)
-        acc = accuracy_score(y_dev_gold_selected, y_dev_pred)
-
-        logger.debug("\n")
-        logger.debug(
-            f"****Classification Report when using {type(model).__name__}*** for COUNTRY={COUNTRY} and question to predict={SURVEY_QN_TO_PREDICT} ")
-        logger.debug(classification_report(y_dev_gold_selected, y_dev_pred))
-        logger.debug("\n")
-        logger.debug("****Confusion Matrix***")
-        labels_in=[0,1]
-        logger.debug(f"yes\tno")
-
-        cm=confusion_matrix(y_dev_gold_selected, y_dev_pred, labels=labels_in)
-        logger.debug(cm)
-        logger.debug("\n")
-        logger.debug("****True Positive etc***")
-        logger.debug('(tn, fp, fn, tp)')
-        logger.debug(cm.ravel())
-        acc=accuracy_score(y_dev_gold_selected, y_dev_pred)
-
-
-if(DO_FEATURE_SELECTION==True):
-    assert topn is not None
-    topn_str=",".join(topn)
-    logger.info(
-        f"best_feature_count: {str(best_feature_count)} \nbest_feature_accuracy: {str(best_feature_accuracy)} \ntop best features:{topn_str}")
-else:
-    if (MULTI_LABEL == True):
-        all_accuracies=[]
-        header1_formatted="{:<20}".format("Feature Column")
-        header2_formatted="{:<20}".format("Accuracy")
-        header3_formatted = "{:<20}".format("Majority Baseline")
-        header4_formatted = "{:<20}".format("Majority Class")
-        logger.info(f"{header1_formatted}\t{header2_formatted}\t{header3_formatted}\t{header4_formatted}\t")
-        for k, v in (multilabelFeature_accuracy.items()):
-            k_formatted="{:<20}".format(str(k))
-            v0_formatted = "{:<20}".format(str(round(v[0],2)))
-            v1_formatted = "{:<20}".format(str(round(v[1], 2)))
-            v2_formatted = "{:<20}".format(str((v[2])))
-            logger.info(f"{k_formatted}\t{v0_formatted}\t{v1_formatted}\t{v2_formatted}")
-            all_accuracies.append(v)
-        #logger.debug(f"average of all columns={np.mean(all_accuracies)}")
 
 
