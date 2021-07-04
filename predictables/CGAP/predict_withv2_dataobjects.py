@@ -334,11 +334,14 @@ def do_training_predict_given_train_dev_splits(model, train, dev, test):
 
 train= test =dev = None
 if (DO_NFCV == True):
-
     #split out entire data into two parts, use one part for select k best features.
     selectksplit_datapoint_count=df_combined.shape[0]*NFCV_SELECTKBEST_SPLIT_PERCENTAGE/100
     selectksplit_indices=np.arange(selectksplit_datapoint_count)
     data_for_selectkbest=df_combined.iloc[selectksplit_indices]
+
+    x_train = data_for_selectkbest.drop(SURVEY_QN_TO_PREDICT, axis=1)
+    y_train = (data_for_selectkbest[SURVEY_QN_TO_PREDICT])
+    best_feature_indices, selectK=select_kbest_feature_indices(MAX_BEST_FEATURE_COUNT, x_train, y_train)
 
     kf = KFold(n_splits=N_FOR_NFCV)
     kf.get_n_splits(df_combined)
