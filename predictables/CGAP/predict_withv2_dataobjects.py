@@ -38,8 +38,9 @@ FILL_NAN_WITH=-1
 DO_FEATURE_SELECTION=True
 USE_ALL_DATA=True
 
-DO_NFCV=True #do n fold cross validation instead of train,dev, test splits
+DO_NFCV=False #do n fold cross validation instead of train,dev, test splits
 N_FOR_NFCV=5 #number of splits for n fold cross validation
+NFCV_SELECTKBEST_SPLIT_PERCENTAGE =20 #when using nfcv, split the entire data first into two parts, and use only one part for feature selection
 
 #Notes:
 # ['COUNTRY', 'Country_Decoded']=housekeeping columns
@@ -178,7 +179,12 @@ def get_topn_best_feature_names(selectK,data,n):
     return topk_best_feature_names
 
 
-
+def select_kbest_feature_indices(feature_count, x_train, y_train):
+    selectK = SelectKBest(mutual_info_classif, k=feature_count)
+    selectK.fit(x_train, y_train)
+    selectMask = selectK.get_support()
+    best_feature_indices = np.where(selectMask)[0].tolist()
+    return best_feature_indices,selectK
 
 def do_training_predict_given_train_dev_splits(model, train, dev, test):
     # separate out the gold/qn to predict so that we train only on the rest
@@ -211,10 +217,11 @@ def do_training_predict_given_train_dev_splits(model, train, dev, test):
         list_features = []
         list_accuracy = []
         for feature_count in tqdm(range(1, MAX_BEST_FEATURE_COUNT), desc="best features", total=MAX_BEST_FEATURE_COUNT):
-            selectK = SelectKBest(mutual_info_classif, k=feature_count)
-            selectK.fit(x_train, y_train)
-            selectMask = selectK.get_support()
-            best_feature_indices = np.where(selectMask)[0].tolist()
+            best_feature_indices,selectK=select_kbest_feature_indices(feature_count,x_train,y_train)
+            # selectK = SelectKBest(mutual_info_classif, k=feature_count)
+            # selectK.fit(x_train, y_train)
+            # selectMask = selectK.get_support()
+            # best_feature_indices = np.where(selectMask)[0].tolist()
             x_train_selected = x_train.iloc[:, best_feature_indices]
             x_dev_selected = x_dev.iloc[:, best_feature_indices]
             x_train_selected = np.asarray(x_train_selected)
@@ -327,13 +334,18 @@ def do_training_predict_given_train_dev_splits(model, train, dev, test):
 
 train= test =dev = None
 if (DO_NFCV == True):
+
+    #split out entire data into two parts, use one part for select k best features.
+    selectksplit_datapoint_count=df_combined.shape[0]*NFCV_SELECTKBEST_SPLIT_PERCENTAGE/100
+    selectksplit_indices=np.arange(selectksplit_datapoint_count)
+    data_for_selectkbest=df_combined.iloc[selectksplit_indices]
+
     kf = KFold(n_splits=N_FOR_NFCV)
     kf.get_n_splits(df_combined)
     for train_index,test_index in kf.split(df_combined):
         train=df_combined.iloc[train_index]
         dev=df_combined.iloc[test_index] #in nfcv world there is only train test. but here using the word dev for maintaining consistency with non nfcv world
         do_training_predict_given_train_dev_splits(model, train, dev, test)
-        
 
 else:
     train, test_dev = train_test_split(df_combined, test_size=0.2, shuffle=True)
