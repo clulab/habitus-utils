@@ -167,6 +167,19 @@ model = GradientBoostingClassifier(n_estimators=100, learning_rate=1.0,max_depth
 #model = MLkNN(k=20)
 
 
+def get_topn_best_feature_names(selectK,data,n):
+    features_scores = selectK.scores_
+    features_indices = [x for x in range(0, len(features_scores))]
+    zipped = zip(features_scores, features_indices)
+    sorted_zipped = sorted(zipped,reverse=True)
+    topk_best_feature_names=[]
+    for (score,index) in sorted_zipped[:n]:
+        topk_best_feature_names.append(data.columns[index])
+    return topk_best_feature_names
+
+
+
+
 def do_training_predict_given_train_dev_splits(model, train, dev, test):
     # separate out the gold/qn to predict so that we train only on the rest
     # we are doing this splitting after train, dev, test split, because we want the data points for predicting qn also to be ssplit/shuffled along with everyone else
@@ -317,9 +330,10 @@ if (DO_NFCV == True):
     kf = KFold(n_splits=N_FOR_NFCV)
     kf.get_n_splits(df_combined)
     for train_index,test_index in kf.split(df_combined):
-        train=df_combined.iloc[[train_index]]
-        dev=df_combined.iloc[[test_index]] #using the word dev for maintaining consistency with non nfcv world
+        train=df_combined.iloc[train_index]
+        dev=df_combined.iloc[test_index] #in nfcv world there is only train test. but here using the word dev for maintaining consistency with non nfcv world
         do_training_predict_given_train_dev_splits(model, train, dev, test)
+        
 
 else:
     train, test_dev = train_test_split(df_combined, test_size=0.2, shuffle=True)
@@ -330,19 +344,6 @@ else:
     assert dev is not None
 
     do_training_predict_given_train_dev_splits(model, train, dev, test)
-
-
-
-
-def get_topn_best_feature_names(selectK,data,n):
-    features_scores = selectK.scores_
-    features_indices = [x for x in range(0, len(features_scores))]
-    zipped = zip(features_scores, features_indices)
-    sorted_zipped = sorted(zipped,reverse=True)
-    topk_best_feature_names=[]
-    for (score,index) in sorted_zipped[:n]:
-        topk_best_feature_names.append(data.columns[index])
-    return topk_best_feature_names
 
 
 
