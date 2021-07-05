@@ -29,7 +29,7 @@ from sklearn.model_selection import KFold
 
 
 
-RUN_ON_SERVER=True
+RUN_ON_SERVER=False
 COUNTRY='bgd'
 #if you know the survey qn allows for multiple answers from farmer, ensure MULTI_LABEL=True.#todo: do that using code
 MULTI_LABEL=False
@@ -51,7 +51,7 @@ REGEX_QNS_TO_AVOID = ['F+'] #if you dont know the exact qn name, but want to ins
 QNS_TO_ADD = ['COUNTRY', 'Country_Decoded','D14',"F1"]
 SURVEY_QN_TO_PREDICT= "F58"
 
-MAX_BEST_FEATURE_COUNT='ALL' #int. else use "ALL" if you want it to find best k features by combining 1 through all "
+MAX_BEST_FEATURE_COUNT='all' #int. else use "all" if you want it to find best k features by combining 1 through all "
 NO_OF_BEST_FEATURES_TO_PRINT=20 #even if the best combination has n features print only top 20
 
 
@@ -149,8 +149,8 @@ df_combined = df_combined.dropna(how='all', subset=cols_qn_to_predict)
 #fill the rest of all nan with some value you pick
 df_combined = df_combined.fillna(FILL_NAN_WITH)
 
-if (MAX_BEST_FEATURE_COUNT)=="ALL": #use all features for feature selection. else use the int value as ciel
-    MAX_BEST_FEATURE_COUNT=df_combined.shape[1]
+# if (MAX_BEST_FEATURE_COUNT)=="ALL": #use all features for feature selection. else use the int value as ciel
+#     MAX_BEST_FEATURE_COUNT=df_combined.shape[1]
 
 if not MULTI_LABEL==True:
     maj_class,baseline=find_majority_baseline_binary(df_combined, SURVEY_QN_TO_PREDICT)
