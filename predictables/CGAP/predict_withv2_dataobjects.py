@@ -29,7 +29,7 @@ from sklearn.model_selection import KFold
 
 
 
-RUN_ON_SERVER=False
+RUN_ON_SERVER=True
 COUNTRY='bgd'
 #if you know the survey qn allows for multiple answers from farmer, ensure MULTI_LABEL=True.#todo: do that using code
 MULTI_LABEL=False
@@ -47,10 +47,11 @@ NFCV_SELECTKBEST_SPLIT_PERCENTAGE =20 #when using nfcv, split the entire data fi
 # ['COUNTRY', 'Country_Decoded']=housekeeping columns
 QNS_TO_AVOID = ['COUNTRY', 'Country_Decoded','D14']
 REGEX_QNS_TO_AVOID = ['F+'] #if you dont know the exact qn name, but want to instead avoid training on a subset. eg. all finance related qns,. i.e starting with F
+#REGEX_QNS_TO_AVOID = ['']
 QNS_TO_ADD = ['COUNTRY', 'Country_Decoded','D14',"F1"]
 SURVEY_QN_TO_PREDICT= "F58"
 
-MAX_BEST_FEATURE_COUNT=2 #int. else use "ALL" if you want it to find best k features by combining 1 through all "
+MAX_BEST_FEATURE_COUNT='ALL' #int. else use "ALL" if you want it to find best k features by combining 1 through all "
 NO_OF_BEST_FEATURES_TO_PRINT=20 #even if the best combination has n features print only top 20
 
 
@@ -407,7 +408,6 @@ train= test =dev = None
 if (DO_NFCV == True):
     #split out entire data into two parts, use one part for select k best features.
     selectksplit_datapoint_count=int(df_combined.shape[0]*NFCV_SELECTKBEST_SPLIT_PERCENTAGE/100)
-
     data_for_selectkbest = df_combined.iloc[:selectksplit_datapoint_count]
     y_data_for_selectkbest = data_for_selectkbest[SURVEY_QN_TO_PREDICT]
     x_data_for_selectkbest = data_for_selectkbest.drop(SURVEY_QN_TO_PREDICT, axis=1)
@@ -416,13 +416,21 @@ if (DO_NFCV == True):
     data_not_used_for_selectkbest = df_combined.iloc[selectksplit_datapoint_count:]
     kf = KFold(n_splits=N_FOR_NFCV)
     kf.get_n_splits(data_not_used_for_selectkbest)
+    logger.info(
+        f"best_feature_count: {str(len(best_feature_indices))}"        
+        f"\ntop best features:{best_feature_indices}")
+
     for index,(train_index,test_index) in enumerate(kf.split(data_not_used_for_selectkbest)):
         logger.info(f"*****************starting new fold. Fold number {index+1}")
         train=data_not_used_for_selectkbest.iloc[train_index]
+
+        #also attach back the part you used for seleckbest. note, use only in training. not in dev
+        train=pd.concat([train,data_for_selectkbest],axis=0)
+
         dev=data_not_used_for_selectkbest.iloc[test_index] #in nfcv world there is only train test. but here using the word dev for maintaining consistency with non nfcv world
         accuracy=do_training_predict_given_train_dev_splits_without_feature_selection(model, train, dev, test,best_feature_indices)
         logger.info(
-            f"best_feature_count: {str(len(best_feature_indices))} \nbest_feature_accuracy: {str(accuracy)} \ntop best features:{best_feature_indices}")
+            f"nbest_feature_accuracy: {str(round(accuracy*100,2))}")
 
 else:
     train, test_dev = train_test_split(df_combined, test_size=0.2, shuffle=True)
