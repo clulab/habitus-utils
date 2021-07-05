@@ -50,10 +50,10 @@ REGEX_QNS_TO_AVOID = [""] #eg:'F+', '' if you dont know the exact qn name, but w
 QNS_TO_ADD = ['COUNTRY', 'Country_Decoded','D14',"F1"]
 SURVEY_QN_TO_PREDICT= "F58"
 
-MAX_BEST_FEATURE_COUNT='all' #int. else use "all" if you want it to find best k features by combining 1 through all "
+MAX_BEST_FEATURE_COUNT=427 #int. else use "all" if you want it to find best k features by combining 1 through all "
 NO_OF_BEST_FEATURES_TO_PRINT=20 #even if the best combination has n features print only top 20
 
- 
+
 
 
 
