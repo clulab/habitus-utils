@@ -82,7 +82,7 @@ log_file_path=os.path.join(os.getcwd(),"logs/",log_file_name)
 logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(name)s -   %(message)s",
     datefmt="%m/%d/%Y %H:%M:%S",
-    level=logging.DEBUG ,
+    level=logging.INFO ,
     filename=log_file_path,
     filemode='w'
 )
@@ -349,13 +349,6 @@ def do_training_predict_given_train_dev_splits_without_feature_selection(model, 
     x_train = x_train.iloc[:, best_feature_indices]
     x_dev = x_dev.iloc[:, best_feature_indices]
 
-
-    if not MULTI_LABEL == True:
-        maj_class_dev, baseline_dev = find_majority_baseline_binary(dev, SURVEY_QN_TO_PREDICT)
-        maj_class_train, baseline_train = find_majority_baseline_binary(train, SURVEY_QN_TO_PREDICT)
-        logger.info(f"majority baseline in dev={baseline_dev}, majority class={maj_class_dev}")
-        logger.info(f"majority baseline in train={baseline_train}, majority class={maj_class_train}")
-
     x_train_selected = np.asarray(x_train)
     x_dev_selected = np.asarray(x_dev)
     y_train_gold_selected = np.asarray(y_train)
@@ -408,6 +401,7 @@ def do_training_predict_given_train_dev_splits_without_feature_selection(model, 
         logger.debug('(tn, fp, fn, tp)')
         logger.debug(cm.ravel())
         acc = accuracy_score(y_dev_gold_selected, y_dev_pred)
+    return acc
 
 train= test =dev = None
 if (DO_NFCV == True):
@@ -422,11 +416,13 @@ if (DO_NFCV == True):
     data_not_used_for_selectkbest = df_combined.iloc[selectksplit_datapoint_count:]
     kf = KFold(n_splits=N_FOR_NFCV)
     kf.get_n_splits(data_not_used_for_selectkbest)
-    for train_index,test_index in kf.split(data_not_used_for_selectkbest):
-        logger.info("*****************starting new fold")
+    for index,(train_index,test_index) in enumerate(kf.split(data_not_used_for_selectkbest)):
+        logger.info(f"*****************starting new fold. Fold number {index+1}")
         train=data_not_used_for_selectkbest.iloc[train_index]
         dev=data_not_used_for_selectkbest.iloc[test_index] #in nfcv world there is only train test. but here using the word dev for maintaining consistency with non nfcv world
-        do_training_predict_given_train_dev_splits_without_feature_selection(model, train, dev, test,best_feature_indices)
+        accuracy=do_training_predict_given_train_dev_splits_without_feature_selection(model, train, dev, test,best_feature_indices)
+        logger.info(
+            f"best_feature_count: {str(len(best_feature_indices))} \nbest_feature_accuracy: {str(accuracy)} \ntop best features:{best_feature_indices}")
 
 else:
     train, test_dev = train_test_split(df_combined, test_size=0.2, shuffle=True)
