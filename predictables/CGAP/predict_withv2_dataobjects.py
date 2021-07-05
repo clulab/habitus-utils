@@ -187,7 +187,10 @@ def select_kbest_feature_indices(feature_count, x_train, y_train):
     best_feature_indices = np.where(selectMask)[0].tolist()
     return best_feature_indices,selectK
 
-def do_training_predict_given_train_dev_splits(model, train, dev, test):
+
+
+
+def do_training_predict_given_train_dev_splits_with_feature_selection(model, train, dev, test):
     # separate out the gold/qn to predict so that we train only on the rest
     # we are doing this splitting after train, dev, test split, because we want the data points for predicting qn also to be ssplit/shuffled along with everyone else
     if MULTI_LABEL == True:
@@ -329,31 +332,101 @@ def do_training_predict_given_train_dev_splits(model, train, dev, test):
             # logger.debug(f"average of all columns={np.mean(all_accuracies)}")
 
 
+def do_training_predict_given_train_dev_splits_without_feature_selection(model, train, dev, test,best_feature_indices):
+    # separate out the gold/qn to predict so that we train only on the rest
+    if MULTI_LABEL == True:
+        y_train = train.filter(regex=(SURVEY_QN_TO_PREDICT + "_*"))
+        x_train = train.drop(y_train.columns, axis=1)
+        y_dev = dev.filter(regex=(SURVEY_QN_TO_PREDICT + "_*"))
+        x_dev = dev.drop(y_dev.columns, axis=1)
+    else:
+        y_train = (train[SURVEY_QN_TO_PREDICT])
+        x_train = train.drop(SURVEY_QN_TO_PREDICT, axis=1)
+        y_dev = np.asarray(dev[SURVEY_QN_TO_PREDICT])
+        x_dev = dev.drop(SURVEY_QN_TO_PREDICT, axis=1)
+
+    #apply the mask found from selectkbest onto the training and test slices- do this after taking out SURVEY_QN_TO_PREDICT
+    x_train = x_train.iloc[:, best_feature_indices]
+    x_dev = x_dev.iloc[:, best_feature_indices]
+
+
+    if not MULTI_LABEL == True:
+        maj_class_dev, baseline_dev = find_majority_baseline_binary(dev, SURVEY_QN_TO_PREDICT)
+        maj_class_train, baseline_train = find_majority_baseline_binary(train, SURVEY_QN_TO_PREDICT)
+        logger.info(f"majority baseline in dev={baseline_dev}, majority class={maj_class_dev}")
+        logger.info(f"majority baseline in train={baseline_train}, majority class={maj_class_train}")
+
+    x_train_selected = np.asarray(x_train)
+    x_dev_selected = np.asarray(x_dev)
+    y_train_gold_selected = np.asarray(y_train)
+    y_dev_gold_selected = np.asarray(y_dev)
+    if (MULTI_LABEL == True):
+        model = MultiOutputClassifier(model).fit(x_train_selected, y_train_gold_selected)
+        y_dev_pred = model.predict(x_dev)
+        all_acc = np.zeros(y_dev_pred.shape[0])
+        multilabelFeature_accuracy = {}
+        for index, each_pred_column in enumerate(y_dev_pred.T):
+            # find majority class baseline for dev
+            maj_class, maj_class_baseline = find_majority_baseline_binary_given_binary_column(
+                y_dev_gold_selected.T[index])
+            acc = accuracy_score(y_dev_gold_selected.T[index], each_pred_column)
+            column_name = y_dev.columns[index]
+            multilabelFeature_accuracy[column_name] = (acc, maj_class_baseline, maj_class)
+            logger.debug("\n")
+            logger.debug("**********************************************************************************")
+            logger.debug(
+                f"****Classification Report when using {type(model).__name__}*** for COUNTRY={COUNTRY} and question to predict={SURVEY_QN_TO_PREDICT} for column name {column_name}")
+            logger.debug(f"Majority class={maj_class}; Majority baseline={maj_class_baseline}")
+            logger.debug(classification_report(y_dev_gold_selected.T[index], each_pred_column))
+            logger.debug("\n")
+            logger.debug("****Confusion Matrix***")
+
+            cm = confusion_matrix(y_dev_gold_selected.T[index], each_pred_column)
+            logger.debug(cm)
+            logger.debug("\n")
+            logger.debug("****True Positive etc***")
+            logger.debug('(tn, fp, fn, tp)')
+            logger.debug(cm.ravel())
+    else:
+        model.fit(x_train_selected, y_train_gold_selected)
+        y_dev_pred = model.predict(x_dev_selected)
+        acc = accuracy_score(y_dev_gold_selected, y_dev_pred)
+
+        logger.debug("\n")
+        logger.debug(
+            f"****Classification Report when using {type(model).__name__}*** for COUNTRY={COUNTRY} and question to predict={SURVEY_QN_TO_PREDICT} ")
+        logger.debug(classification_report(y_dev_gold_selected, y_dev_pred))
+        logger.debug("\n")
+        logger.debug("****Confusion Matrix***")
+        labels_in = [0, 1]
+        logger.debug(f"yes\tno")
+
+        cm = confusion_matrix(y_dev_gold_selected, y_dev_pred, labels=labels_in)
+        logger.debug(cm)
+        logger.debug("\n")
+        logger.debug("****True Positive etc***")
+        logger.debug('(tn, fp, fn, tp)')
+        logger.debug(cm.ravel())
+        acc = accuracy_score(y_dev_gold_selected, y_dev_pred)
 
 train= test =dev = None
 if (DO_NFCV == True):
     #split out entire data into two parts, use one part for select k best features.
     selectksplit_datapoint_count=int(df_combined.shape[0]*NFCV_SELECTKBEST_SPLIT_PERCENTAGE/100)
-    #selectksplit_indices=np.arange(selectksplit_datapoint_count)
-    data_for_selectkbest = df_combined.iloc[:selectksplit_datapoint_count]
 
+    data_for_selectkbest = df_combined.iloc[:selectksplit_datapoint_count]
     y_data_for_selectkbest = data_for_selectkbest[SURVEY_QN_TO_PREDICT]
     x_data_for_selectkbest = data_for_selectkbest.drop(SURVEY_QN_TO_PREDICT, axis=1)
     best_feature_indices, selectK = select_kbest_feature_indices(MAX_BEST_FEATURE_COUNT, x_data_for_selectkbest,
                                                                  y_data_for_selectkbest)
-
-
-    #apply the mask found in previous x_data_for_selectkbest from part 1onto the part2 -i.e get data_not_used_for_selectkbest with k best features
     data_not_used_for_selectkbest = df_combined.iloc[selectksplit_datapoint_count:]
-    x_train_selected = data_not_used_for_selectkbest.iloc[:, best_feature_indices]
-
-
     kf = KFold(n_splits=N_FOR_NFCV)
-    kf.get_n_splits(x_train_selected)
-    for train_index,test_index in kf.split(x_train_selected):
-        train=x_train_selected.iloc[train_index]
-        dev=x_train_selected.iloc[test_index] #in nfcv world there is only train test. but here using the word dev for maintaining consistency with non nfcv world
-        do_training_predict_given_train_dev_splits(model, train, dev, test)
+    kf.get_n_splits(data_not_used_for_selectkbest)
+    for train_index,test_index in kf.split(data_not_used_for_selectkbest):
+        logger.info("*****************starting new fold")
+        train=data_not_used_for_selectkbest.iloc[train_index]
+        dev=data_not_used_for_selectkbest.iloc[test_index] #in nfcv world there is only train test. but here using the word dev for maintaining consistency with non nfcv world
+        do_training_predict_given_train_dev_splits_without_feature_selection(model, train, dev, test,best_feature_indices)
 
 else:
     train, test_dev = train_test_split(df_combined, test_size=0.2, shuffle=True)
@@ -363,7 +436,7 @@ else:
     assert test is not None
     assert dev is not None
 
-    do_training_predict_given_train_dev_splits(model, train, dev, test)
+    do_training_predict_given_train_dev_splits_with_feature_selection(model, train, dev, test)
 
 
 
