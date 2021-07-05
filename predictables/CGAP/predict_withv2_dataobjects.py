@@ -29,7 +29,7 @@ from sklearn.model_selection import KFold
 
 
 
-RUN_ON_SERVER=False
+RUN_ON_SERVER=True
 COUNTRY='bgd'
 #if you know the survey qn allows for multiple answers from farmer, ensure MULTI_LABEL=True.#todo: do that using code
 MULTI_LABEL=False
