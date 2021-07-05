@@ -23,9 +23,10 @@ from sklearn.neighbors import KNeighborsClassifier
 from v2_Data_Objects import DO_Encoder, DO_Decoder, Encoded_DOs, Decoded_DOs, Decoded_CGAP_DOs
 import matplotlib.pyplot as plt
 import numpy as np
-import sys,os
+import sys,os,math
 from tqdm import tqdm
 from sklearn.model_selection import KFold
+
 
 
 RUN_ON_SERVER=False
@@ -332,24 +333,19 @@ def do_training_predict_given_train_dev_splits(model, train, dev, test):
 train= test =dev = None
 if (DO_NFCV == True):
     #split out entire data into two parts, use one part for select k best features.
-    selectksplit_datapoint_count=df_combined.shape[0]*NFCV_SELECTKBEST_SPLIT_PERCENTAGE/100
-    selectksplit_indices=np.arange(selectksplit_datapoint_count)
-    data_for_selectkbest = df_combined.iloc[selectksplit_indices]
+    selectksplit_datapoint_count=int(df_combined.shape[0]*NFCV_SELECTKBEST_SPLIT_PERCENTAGE/100)
+    #selectksplit_indices=np.arange(selectksplit_datapoint_count)
+    data_for_selectkbest = df_combined.iloc[:selectksplit_datapoint_count]
 
-    data_not_used_in_selectkbest_count=df_combined.shape[0]-selectksplit_datapoint_count
-    data_not_used_in_selectkbest_count_indices = np.arange(data_not_used_in_selectkbest_count)
-    data_not_for_selectkbest = df_combined.iloc[data_not_used_in_selectkbest_count_indices]
-    x_data_not_for_selectkbest = data_not_for_selectkbest.drop(SURVEY_QN_TO_PREDICT, axis=1)
-    y_data_not_for_selectkbest = (data_not_for_selectkbest[SURVEY_QN_TO_PREDICT])
-
-
+    y_data_for_selectkbest = data_for_selectkbest[SURVEY_QN_TO_PREDICT]
     x_data_for_selectkbest = data_for_selectkbest.drop(SURVEY_QN_TO_PREDICT, axis=1)
-    y_data_for_selectkbest = (data_for_selectkbest[SURVEY_QN_TO_PREDICT])
-    best_feature_indices, selectK=select_kbest_feature_indices(MAX_BEST_FEATURE_COUNT, x_data_for_selectkbest, y_data_for_selectkbest)
+    best_feature_indices, selectK = select_kbest_feature_indices(MAX_BEST_FEATURE_COUNT, x_data_for_selectkbest,
+                                                                 y_data_for_selectkbest)
 
-    #apply the mask found in previous step from part 1onto the part2
-    x_train_selected = data_not_used_in_selectkbest_count.iloc[:, best_feature_indices]
-    x_train_selected = np.asarray(x_train_selected)
+
+    #apply the mask found in previous x_data_for_selectkbest from part 1onto the part2 -i.e get data_not_used_for_selectkbest with k best features
+    data_not_used_for_selectkbest = df_combined.iloc[selectksplit_datapoint_count:]
+    x_train_selected = data_not_used_for_selectkbest.iloc[:, best_feature_indices]
 
 
     kf = KFold(n_splits=N_FOR_NFCV)
