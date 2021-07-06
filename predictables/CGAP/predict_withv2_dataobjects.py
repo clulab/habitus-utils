@@ -39,7 +39,7 @@ FILL_NAN_WITH=-1
 DO_FEATURE_SELECTION=True
 USE_ALL_DATA=True
 
-DO_NFCV=True #do n fold cross validation instead of train,dev, test splits
+DO_NFCV=False #do n fold cross validation instead of train,dev, test splits
 N_FOR_NFCV=5 #number of splits for n fold cross validation
 NFCV_SELECTKBEST_SPLIT_PERCENTAGE =20 #when using nfcv, split the entire data first into two parts, and use only one part for feature selection
 
@@ -187,7 +187,36 @@ def select_kbest_feature_indices(feature_count, x_train, y_train):
     best_feature_indices = np.where(selectMask)[0].tolist()
     return best_feature_indices,selectK
 
-
+def find_best_feature_count():
+    # for feature_count in tqdm(range(1, MAX_BEST_FEATURE_COUNT), desc="best features", total=MAX_BEST_FEATURE_COUNT):
+    best_feature_indices, selectK = select_kbest_feature_indices(MAX_BEST_FEATURE_COUNT, x_train, y_train)
+    # selectK = SelectKBest(mutual_info_classif, k=feature_count)
+    # selectK.fit(x_train, y_train)
+    # selectMask = selectK.get_support()
+    # best_feature_indices = np.where(selectMask)[0].tolist()
+    x_train_selected = x_train.iloc[:, best_feature_indices]
+    x_dev_selected = x_dev.iloc[:, best_feature_indices]
+    x_train_selected = np.asarray(x_train_selected)
+    x_dev_selected = np.asarray(x_dev_selected)
+    y_train_gold_selected = np.asarray(y_train)
+    y_dev_gold_selected = np.asarray(y_dev)
+    model.fit(x_train_selected, y_train_gold_selected)
+    y_dev_pred = model.predict(x_dev_selected)
+    acc = accuracy_score(y_dev_gold_selected, y_dev_pred)
+    list_features.append(MAX_BEST_FEATURE_COUNT)
+    list_accuracy.append(acc)
+    accuracy_per_feature_count[MAX_BEST_FEATURE_COUNT] = acc
+    if (acc > best_feature_accuracy):
+        selecK_best = selectK
+        best_feature_accuracy = acc
+        best_feature_count = MAX_BEST_FEATURE_COUNT
+    # plot a figure with number of features as x axis and accuracy as y axis.
+    # fig, ax = plt.subplots()
+    assert len(list_features) == len(list_accuracy)
+    logger.info(f"list_features={list_features}")
+    logger.info(f"list_accuracy={list_accuracy}")
+    # ax.plot(list_features, list_accuracy)
+    # plt.show()
 
 
 def do_training_predict_given_train_dev_splits_with_feature_selection(model, train, dev, test):
@@ -220,28 +249,28 @@ def do_training_predict_given_train_dev_splits_with_feature_selection(model, tra
         feature_accuracy = {}
         list_features = []
         list_accuracy = []
-        for feature_count in tqdm(range(1, MAX_BEST_FEATURE_COUNT), desc="best features", total=MAX_BEST_FEATURE_COUNT):
-            best_feature_indices,selectK=select_kbest_feature_indices(feature_count,x_train,y_train)
-            # selectK = SelectKBest(mutual_info_classif, k=feature_count)
-            # selectK.fit(x_train, y_train)
-            # selectMask = selectK.get_support()
-            # best_feature_indices = np.where(selectMask)[0].tolist()
-            x_train_selected = x_train.iloc[:, best_feature_indices]
-            x_dev_selected = x_dev.iloc[:, best_feature_indices]
-            x_train_selected = np.asarray(x_train_selected)
-            x_dev_selected = np.asarray(x_dev_selected)
-            y_train_gold_selected = np.asarray(y_train)
-            y_dev_gold_selected = np.asarray(y_dev)
-            model.fit(x_train_selected, y_train_gold_selected)
-            y_dev_pred = model.predict(x_dev_selected)
-            acc = accuracy_score(y_dev_gold_selected, y_dev_pred)
-            list_features.append(feature_count)
-            list_accuracy.append(acc)
-            accuracy_per_feature_count[feature_count] = acc
-            if (acc > best_feature_accuracy):
-                selecK_best = selectK
-                best_feature_accuracy = acc
-                best_feature_count = feature_count
+        #for feature_count in tqdm(range(1, MAX_BEST_FEATURE_COUNT), desc="best features", total=MAX_BEST_FEATURE_COUNT):
+        best_feature_indices,selectK=select_kbest_feature_indices(MAX_BEST_FEATURE_COUNT,x_train,y_train)
+        # selectK = SelectKBest(mutual_info_classif, k=feature_count)
+        # selectK.fit(x_train, y_train)
+        # selectMask = selectK.get_support()
+        # best_feature_indices = np.where(selectMask)[0].tolist()
+        x_train_selected = x_train.iloc[:, best_feature_indices]
+        x_dev_selected = x_dev.iloc[:, best_feature_indices]
+        x_train_selected = np.asarray(x_train_selected)
+        x_dev_selected = np.asarray(x_dev_selected)
+        y_train_gold_selected = np.asarray(y_train)
+        y_dev_gold_selected = np.asarray(y_dev)
+        model.fit(x_train_selected, y_train_gold_selected)
+        y_dev_pred = model.predict(x_dev_selected)
+        acc = accuracy_score(y_dev_gold_selected, y_dev_pred)
+        list_features.append(MAX_BEST_FEATURE_COUNT)
+        list_accuracy.append(acc)
+        accuracy_per_feature_count[MAX_BEST_FEATURE_COUNT] = acc
+        if (acc > best_feature_accuracy):
+            selecK_best = selectK
+            best_feature_accuracy = acc
+            best_feature_count = MAX_BEST_FEATURE_COUNT
         # plot a figure with number of features as x axis and accuracy as y axis.
         # fig, ax = plt.subplots()
         assert len(list_features) == len(list_accuracy)
@@ -249,6 +278,22 @@ def do_training_predict_given_train_dev_splits_with_feature_selection(model, tra
         logger.info(f"list_accuracy={list_accuracy}")
         # ax.plot(list_features, list_accuracy)
         # plt.show()
+
+        logger.debug("\n")
+        logger.debug(
+            f"****Classification Report when using {type(model).__name__}*** for COUNTRY={COUNTRY} and question to predict={SURVEY_QN_TO_PREDICT} ")
+        logger.debug(classification_report(y_dev_gold_selected, y_dev_pred))
+        logger.debug("\n")
+        logger.debug("****Confusion Matrix***")
+        labels_in = [0, 1]
+        logger.debug(f"yes\tno")
+
+        cm = confusion_matrix(y_dev_gold_selected, y_dev_pred, labels=labels_in)
+        logger.debug(cm)
+        logger.debug("\n")
+        logger.debug("****True Positive etc***")
+        logger.debug('(tn, fp, fn, tp)')
+        logger.debug(cm.ravel())
 
         assert selecK_best is not None
         if (MAX_BEST_FEATURE_COUNT < NO_OF_BEST_FEATURES_TO_PRINT):
