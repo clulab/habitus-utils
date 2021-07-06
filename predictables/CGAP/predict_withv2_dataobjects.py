@@ -46,11 +46,11 @@ NFCV_SELECTKBEST_SPLIT_PERCENTAGE =20 #when using nfcv, split the entire data fi
 #Notes:
 # ['COUNTRY', 'Country_Decoded']=housekeeping columns
 QNS_TO_AVOID = ['COUNTRY', 'Country_Decoded','D14']
-REGEX_QNS_TO_AVOID = [""] #eg:'F+', '' if you dont know the exact qn name, but want to instead avoid training on a subset. eg. all finance related qns,. i.e starting with F
+REGEX_QNS_TO_AVOID = ["F+"] #eg:'F+', '' if you dont know the exact qn name, but want to instead avoid training on a subset. eg. all finance related qns,. i.e starting with F
 QNS_TO_ADD = ['COUNTRY', 'Country_Decoded','D14',"F1"]
 SURVEY_QN_TO_PREDICT= "F58"
 
-MAX_BEST_FEATURE_COUNT='all' #int. else use "all" if you want it to find best k features by combining 1 through all "
+MAX_BEST_FEATURE_COUNT=20 #int. else use "all" if you want it to find best k features by combining 1 through all "
 NO_OF_BEST_FEATURES_TO_PRINT=20 #even if the best combination has n features print only top 20
 
 
@@ -412,21 +412,25 @@ if (DO_NFCV == True):
     x_data_for_selectkbest = data_for_selectkbest.drop(SURVEY_QN_TO_PREDICT, axis=1)
     best_feature_indices, selectK = select_kbest_feature_indices(MAX_BEST_FEATURE_COUNT, x_data_for_selectkbest,
                                                                  y_data_for_selectkbest)
+
+    best_feature_names=get_topn_best_feature_names(selectK,data_for_selectkbest,20)
     data_not_used_for_selectkbest = df_combined.iloc[selectksplit_datapoint_count:]
     kf = KFold(n_splits=N_FOR_NFCV)
     kf.get_n_splits(data_not_used_for_selectkbest)
     logger.info(
         f"best_feature_count: {str(len(best_feature_indices))}"        
-        f"\ntop best features:{best_feature_indices}")
+        f"\ntop best features:{best_feature_names}")
 
     for index,(train_index,test_index) in enumerate(kf.split(data_not_used_for_selectkbest)):
         logger.info(f"*****************starting new fold. Fold number {index+1}")
         train=data_not_used_for_selectkbest.iloc[train_index]
-
         #also attach back the part you used for seleckbest. note, use only in training. not in dev
         train=pd.concat([train,data_for_selectkbest],axis=0)
-
         dev=data_not_used_for_selectkbest.iloc[test_index] #in nfcv world there is only train test. but here using the word dev for maintaining consistency with non nfcv world
+        maj_class, baseline = find_majority_baseline_binary(dev, SURVEY_QN_TO_PREDICT)
+        logger.info(f"majority baseline={round(baseline,2)}, majority class={maj_class} dev data for this fold")
+
+
         accuracy=do_training_predict_given_train_dev_splits_without_feature_selection(model, train, dev, test,best_feature_indices)
         logger.info(
             f"nbest_feature_accuracy: {str(round(accuracy*100,2))}")
