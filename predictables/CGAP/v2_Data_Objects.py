@@ -401,8 +401,8 @@ class Decoded_CGAP_DOs (Decoded_DOs):
                                         new_cols.append(new_col_name)
                                     v.df.columns = new_cols
                                     for sub_qn in (v.df):
-                                        v_df_scaled = pd.DataFrame(scale_min_max(v.df[sub_qn]))
-                                        v.df[sub_qn] = pd.Series(v_df_scaled[0])
+                                        v_df_scaled = (scale_min_max(v.df[sub_qn]))
+                                        v.df[sub_qn] = v_df_scaled.reshape(-1)
                                         df = pd.concat([df, v.df[sub_qn]], axis=1)
 
                                 if (label not in qns_to_avoid):
@@ -416,8 +416,8 @@ class Decoded_CGAP_DOs (Decoded_DOs):
                                                 new_cols.append(new_col_name)
                                             v.df.columns = new_cols
                                             for sub_qn in (v.df):
-                                                    v_df_scaled = pd.DataFrame(scale_min_max(v.df[sub_qn]))
-                                                    v.df[sub_qn] = pd.Series(v_df_scaled[0])
+                                                    v_df_scaled = (scale_min_max(v.df[sub_qn]))
+                                                    v.df[sub_qn] = v_df_scaled.reshape(-1)
                                                     df = pd.concat([df, v.df[sub_qn]], axis=1)
 
         assert df is not None
@@ -447,7 +447,7 @@ class Decoded_CGAP_DOs (Decoded_DOs):
                                 if (label in SURVEY_QN_TO_PREDICT):
                                     cleaned_column = self.clean_up(v.df[label])
                                     v_df_scaled = scale_min_max(cleaned_column)
-                                    v.df[label]=pd.Series(v_df_scaled[0])
+                                    v.df[label] = v_df_scaled.reshape(-1)
                                     df = pd.concat([df,v.df[label] ], axis=1)
                                 else:
                                     if (label not in qns_to_avoid):
@@ -456,7 +456,7 @@ class Decoded_CGAP_DOs (Decoded_DOs):
                                                     #temporary hack- some data values are still strings. cast it to int/float
                                                     cleaned_column=self.clean_up(v.df[label])
                                                     v_df_scaled = scale_min_max(cleaned_column)
-                                                    v.df[label] = pd.Series(v_df_scaled[0])
+                                                    v.df[label] = v_df_scaled.reshape(-1)
                                                     df = pd.concat([df, v.df[label]], axis=1)
         assert df is not None
         return df
