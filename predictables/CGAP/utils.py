@@ -16,7 +16,4 @@ def scale_min_max(data):
     df_min_max_scaled=np.asarray(df_min_max_scaled).reshape(-1, 1)
     scaler.fit(df_min_max_scaled)
     df_min_max_scaled=scaler.transform(df_min_max_scaled)
-
-    # df_min_max_scaled = (df_min_max_scaled - df_min_max_scaled.min()) / (
-    #             df_min_max_scaled.max() - df_min_max_scaled.min())
     return df_min_max_scaled
