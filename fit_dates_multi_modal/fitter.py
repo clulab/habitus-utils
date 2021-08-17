@@ -19,14 +19,12 @@ numpy.random.seed(3)
 time_range = tuple(time.mktime(time.strptime(d, _DATE_FORMAT))
                        for d in _DATE_RANGE)
 
-distribution = numpy.random.normal(
-    loc=(time_range[0] + time_range[1]) * 0.5,
-    scale=(time_range[1] - time_range[0]) * _EMPIRICAL_SCALE_RATIO,
-    size=_DISTRIBUTION_SIZE
-)
 
 
-#s = np.array(list(time.strftime(_DATE_FORMAT, time.localtime(t))for t in numpy.sort(distribution)))
+distribution1 = numpy.random.normal(loc=(time_range[0] + time_range[1]/2) * 0.5,scale=(time_range[1] - time_range[0]) * _EMPIRICAL_SCALE_RATIO,size=_DISTRIBUTION_SIZE)
+distribution2 = numpy.random.normal(loc=(time_range[1]/2 + time_range[1]) * 0.5,scale=(time_range[1] - time_range[0]) * _EMPIRICAL_SCALE_RATIO,size=_DISTRIBUTION_SIZE)
+
+distribution = np.concatenate([distribution1, distribution2])
 
 distribution=np.true_divide(distribution, _SCALE_RATIO_FOR_DRAWING)
 sigma=3
