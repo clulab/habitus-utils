@@ -57,7 +57,7 @@ labels = axes.get_xticklabels()
 
 plt.setp(labels, rotation=45, horizontalalignment='right')
 
-title_custom="Fitting a kernel density estimation over a normal \ndistribution of dates in the range: 2000-05-12 to 2020-05-12\n (lines=bandwidth of kernel density function)"
+title_custom="Fitting a kernel density estimation over a multimodal \ndistribution of dates in the range: 2000-05-12 to 2020-05-12\n (lines=bandwidth of kernel density function)"
 axes.set(xlim=[bins[0], bins[len(bins)-1]], xlabel='Dates which are edges of each bin', ylabel='No of dates per bin ',
        title=title_custom)
 
