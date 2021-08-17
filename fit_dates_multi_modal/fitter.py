@@ -15,8 +15,8 @@ fig, axes = plt.subplots(sharex='all',sharey='all',)
 #x_axis=np.array(list(data.values()))
 #y_axis=np.array(list(data.keys()))
 axes.plot(x_grid,y_axis,'rx')
-
-for bndw in [0.1,0.2,0.5,0.7]:
+all_bdw=[np.linspace(0,1,100)]
+for bndw in all_bdw:
     kde=KernelDensity(kernel='gaussian',bandwidth=bndw).fit(X=y_axis.reshape(-1,1))
     log_density=kde.score_samples(x_grid.reshape(-1,1))
     axes.plot(x_grid,(log_density),'b--')
