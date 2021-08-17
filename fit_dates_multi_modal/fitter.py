@@ -2,16 +2,19 @@ from numpy import random
 from sklearn.neighbors import KernelDensity
 import matplotlib.pyplot as plt
 import numpy as np
-plt.style.use('Solarize_Light2')
+plt.style.use('seaborn-colorblind')
 #datefn from:https://stackoverflow.com/questions/39260616/generate-a-normal-distribution-of-dates-within-a-range
 import time
 import numpy
+
 
 _DATE_RANGE = ('2000-05-12', '2020-05-12')
 _DATE_FORMAT = '%Y-%m-%d'
 _EMPIRICAL_SCALE_RATIO = 0.15
 _DISTRIBUTION_SIZE = 1000
 _SCALE_RATIO_FOR_DRAWING=1e8
+
+numpy.random.seed(3)
 
 time_range = tuple(time.mktime(time.strptime(d, _DATE_FORMAT))
                        for d in _DATE_RANGE)
@@ -31,7 +34,7 @@ mu=1193084540.5079513
 
 
 
-fig, axes = plt.subplots(sharex='all',sharey='all')
+fig, axes = plt.subplots(sharex='all',sharey='all',figsize=(13, 9))
 
 
 
@@ -50,26 +53,22 @@ def reverse_dates(date,pos=None):
     return indiv
 
 
-
-
-print(reverse_bins(bins))
-
-
-
 axes.plot(bins, 1/(sigma * np.sqrt(2 * np.pi)) *np.exp( - (bins - mu)**2 / (2 * sigma**2) ),linewidth=2, color='r')
 
 labels = axes.get_xticklabels()
-axes.xaxis.set_major_formatter(reverse_dates)
+
 plt.setp(labels, rotation=45, horizontalalignment='right')
-#axes.plot(bins,distribution,'bx')
-all_bdw=np.linspace(0.1,1,10)
-#for bndw in [0.1,0.2,0.9]:
+
+title_custom="Fitting a kernel density estimation over a normal \ndistribution of dates in the range: 2000-05-12 to 2020-05-12\n (lines=bandwidth of kernel density function)"
+axes.set(xlim=[bins[0], bins[len(bins)-1]], xlabel='Dates which are edges of each bin', ylabel='No of dates per bin ',
+       title=title_custom)
+
+axes.xaxis.set_major_formatter(reverse_dates)
+
+all_bdw=(np.linspace(0.1,1,10)).round(2)
 for bndw in all_bdw:
     kde=KernelDensity(kernel='gaussian',bandwidth=bndw).fit(X=distribution.reshape(-1, 1))
     log_density=kde.score_samples(bins.reshape(-1,1))
-    axes.plot(bins,np.exp(log_density),'b--')
+    axes.plot(bins,np.exp(log_density),label=bndw)
+axes.legend()
 plt.show()
-# figure,axes= plt.subplots()
-# axes.set(xlim=[3,-3],ylim=[3,-3])
-# axes.plot(y,'r--')
-# plt.show()
