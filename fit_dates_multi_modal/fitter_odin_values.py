@@ -3,14 +3,13 @@ from sklearn.neighbors import KernelDensity
 import matplotlib.pyplot as plt
 import numpy as np
 plt.style.use('seaborn-colorblind')
-#datefn from:https://stackoverflow.com/questions/39260616/generate-a-normal-distribution-of-dates-within-a-range
 from datetime import datetime
 from datetime import timedelta
 import numpy
+import time
 
 
-
-INPUTS=["XXXX-07-07 -- XXXX-07-22","XXXX-05-15","1358-8-8","1992-08-08 -- 1992-12-12"]
+INPUTS=["XXXX-07-07 -- XXXX-07-22","XXXX-07-19 -- XXXX-08-04","XXXX-08-01","XXXX-09-25 -- XXXX-10-05","XXXX-05-15","XXXX-07-19 -- XXXX-08-04","1358-XX-XX","XXXX-03-03 -- XXXX-03-11","XXXX-07-14 -- XXXX-07-31","2005-03-18","XXXX-06-17","XXXX-10-25 -- XXXX-12-10","XXXX-10-17","XXXX-10-17","XXXX-03-11 -- XXXX-03-31","2011-XX-XX -- 2018-XX-XX","XXXX-07-07 -- XXXX-07-22","XXXX-07-19 -- XXXX-08-04","2018-05-10","2018-06-21","XXXX-07-19 -- XXXX-08-04","XXXX-06-17","XXXX-12-15 -- XXXX-01-13","XXXX-12-16 --XXXX-01-15","XXXX-05-05"]
 
 #dates_with_year=INPUT.replace("XXXX", "2017")
 #_DATE_RANGE=tuple(dates_with_year.split("--"))
@@ -120,6 +119,12 @@ def check_if_just_year(input):
     if (len(split_by_dash) > 1 and split_by_dash[1] == "XX") and split_by_dash[2] == "XX":
         return True
 
+    # #dates less than 1900 must be removed
+    # try:
+    #     input_datetime=datetime.strptime(split_by_dash[0], "%Y-%m-%d")
+    # except OverflowError:
+    #     return True
+
     return False
 
 
@@ -146,15 +151,27 @@ def get_days_count_in_range(start_date,end_date):
     return (end_date-start_date).days
 
 
-all_dates=[]
+def convert_list_to_unix_timestamp_list(input):
+    list_timestamp=[]
+    for x in input:
+        list_timestamp.append(datetime.timestamp(x))
+    return list_timestamp
+
+def convert_list_str_to_datetime(input):
+    list_datetime=[]
+    for x in input:
+        list_datetime.append(datetime.strptime(x,"%Y-%m-%d"))
+    return list_datetime
+
+all_dates_str=[]
 
 def list_all_days_in_a_range(start_date, end_date,time_delta):
     assert type(start_date) is datetime
     assert type(time_delta) is int
     dates_in_range=[]
     for x in range(time_delta):
-        dates_in_range.append(datetime.strftime(start_date+timedelta(x),"%Y-%d-%m"))
-    dates_in_range.append(datetime.strftime(end_date, "%Y-%d-%m"))
+        dates_in_range.append(datetime.strftime(start_date+timedelta(x),"%Y-%m-%d"))
+    dates_in_range.append(datetime.strftime(end_date, "%Y-%m-%d"))
     return dates_in_range
 
 for each_input in INPUTS:
@@ -167,15 +184,67 @@ for each_input in INPUTS:
             end_date_as_datetime = datetime.strptime(end_date_with_custom_year, "%Y-%m-%d")
             days_count=get_days_count_in_range(start_date_as_datetime,end_date_as_datetime)
             dates_in_range=list_all_days_in_a_range(start_date_as_datetime,end_date_as_datetime,days_count)
-            all_dates.extend(dates_in_range)
+            all_dates_str.extend(dates_in_range)
         else:
                 break
     else: #if its a stand alone date, and not range, clean and add it to the list of all_dates
         flag, end_date_with_custom_year = clean_replace_year(each_input)
         if (flag):
-            all_dates.append(end_date_with_custom_year)
+            all_dates_str.append(end_date_with_custom_year)
 
-print(f"value of alldates is {all_dates}")
+all_dates_datetime_format=convert_list_str_to_datetime(all_dates_str)
+all_dates_as_timestamp=convert_list_to_unix_timestamp_list(all_dates_datetime_format)
+
+print(f"value of alldates is {all_dates_as_timestamp}")
+
+
+distribution=numpy.array(all_dates_as_timestamp)
+distribution=np.true_divide(distribution, _SCALE_RATIO_FOR_DRAWING)
+
+assert distribution is not None
+sigma=3
+mu=1193084540.5079513
+
+
+
+fig, axes = plt.subplots(sharex='all',sharey='all',figsize=(13, 7))
+
+
+
+count, bins, ignored = axes.hist(distribution, bins=30, density=True)
+
+def reverse_bins(bins):
+    dates=[]
+    for t in numpy.sort(bins):
+        indiv=reverse_dates(t)
+        dates.append(indiv)
+    return dates
+
+#for printing axes purposes
+def reverse_dates(date,pos=None):
+    indiv=time.strftime(_DATE_FORMAT, time.localtime(date*_SCALE_RATIO_FOR_DRAWING))
+    return indiv
+
+#to plot the actual distribution for a given sigma and mu i.e when using dummy data
+axes.plot(bins, 1/(sigma * np.sqrt(2 * np.pi)) *np.exp( - (bins - mu)**2 / (2 * sigma**2) ),linewidth=2, color='r')
+
+labels = axes.get_xticklabels()
+
+plt.setp(labels, rotation=45, horizontalalignment='right')
+
+title_custom="Fitting a kernel density estimation over a multimodal \ndistribution of dates in a given range\n (lines=bandwidth of kernel density function)"
+axes.set(xlim=[bins[0], bins[len(bins)-1]], xlabel='Dates which are edges of each bin', ylabel='No of dates per bin ',
+       title=title_custom)
+
+axes.xaxis.set_major_formatter(reverse_dates)
+
+all_bdw=(np.linspace(0.1,1,10)).round(2)
+for bndw in all_bdw:
+    kde=KernelDensity(kernel='gaussian',bandwidth=bndw).fit(X=distribution.reshape(-1, 1))
+    log_density=kde.score_samples(bins.reshape(-1,1))
+    axes.plot(bins,np.exp(log_density),label=bndw)
+axes.legend()
+plt.show()
 
 
 
