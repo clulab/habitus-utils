@@ -119,13 +119,15 @@ def check_if_just_year(input):
     if (len(split_by_dash) > 1 and split_by_dash[1] == "XX") and split_by_dash[2] == "XX":
         return True
 
-    # #dates less than 1900 must be removed
-    # try:
-    #     input_datetime=datetime.strptime(split_by_dash[0], "%Y-%m-%d")
-    # except OverflowError:
-    #     return True
+def check_if_datetime_convertible(input):
+    try:
+        input_datetime=datetime.strptime(input, _DATE_FORMAT)
+        return input_datetime
+    except ValueError:
+        return False
+    except OverflowError :
+        return False
 
-    return False
 
 
 # replace all years in a given date with a custom value. this is useful because when we calculate the unix date, all dates have same year/grounding
@@ -134,7 +136,13 @@ def replace_all_years_with_custom_value(input):
 
 
 
-def clean_replace_year(end_date):
+def clean_replace_year(input):
+    dat_input=datetime.strptime(input,_DATE_FORMAT)
+    dat_input=dat_input.replace(CUSTOM_YEAR,dat_input.month,dat_input.day)
+    return dat_input
+
+
+def clean_replace_year_str(end_date):
     end_date=end_date.strip()
     # if the date is something like "XXXX" , i.e., no month or date, just skip that entry and move on
     if (check_if_just_year(end_date)):
@@ -177,8 +185,8 @@ def list_all_days_in_a_range(start_date, end_date,time_delta):
 for each_input in INPUTS:
     is_range,range_splits=check_if_range(each_input)
     if(is_range):
-        flag1, start_date_with_custom_year = clean_replace_year(range_splits[0])
-        flag2, end_date_with_custom_year = clean_replace_year(range_splits[1])
+        flag1, start_date_with_custom_year = clean_replace_year_str(range_splits[0])
+        flag2, end_date_with_custom_year = clean_replace_year_str(range_splits[1])
         if flag1  and flag2:
             start_date_as_datetime=datetime.strptime(start_date_with_custom_year, "%Y-%m-%d")
             end_date_as_datetime = datetime.strptime(end_date_with_custom_year, "%Y-%m-%d")
@@ -188,7 +196,13 @@ for each_input in INPUTS:
         else:
                 break
     else: #if its a stand alone date, and not range, clean and add it to the list of all_dates
-        flag, end_date_with_custom_year = clean_replace_year(each_input)
+        is_dt_convertible=check_if_datetime_convertible(each_input)
+        if(not is_dt_convertible):
+            flag, end_date_with_custom_year = clean_replace_year_str(each_input)
+        else:
+            end_date_with_custom_year=clean_replace_year(each_input)
+
+
         if (flag):
             all_dates_str.append(end_date_with_custom_year)
 
@@ -213,15 +227,10 @@ fig, axes = plt.subplots(sharex='all',sharey='all',figsize=(13, 7))
 
 count, bins, ignored = axes.hist(distribution, bins=30, density=True)
 
-def reverse_bins(bins):
-    dates=[]
-    for t in numpy.sort(bins):
-        indiv=reverse_dates(t)
-        dates.append(indiv)
-    return dates
 
 #for printing axes purposes
 def reverse_dates(date,pos=None):
+    #indiv = datetime.strftime((date * _SCALE_RATIO_FOR_DRAWING),"%m-%d")
     indiv=time.strftime(_DATE_FORMAT, time.localtime(date*_SCALE_RATIO_FOR_DRAWING))
     return indiv
 
