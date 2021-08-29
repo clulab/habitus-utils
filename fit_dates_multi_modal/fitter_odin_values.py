@@ -4,12 +4,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 plt.style.use('seaborn-colorblind')
 #datefn from:https://stackoverflow.com/questions/39260616/generate-a-normal-distribution-of-dates-within-a-range
-import time
+from datetime import datetime
+from datetime import timedelta
 import numpy
 
 
 
-INPUTS=["XXXX-07-07 -- XXXX-07-22","XXXX-05-15","1358-XX-XX","XXXX -- XXXX"]
+INPUTS=["XXXX-07-07 -- XXXX-07-22","XXXX-05-15","1358-8-8","1992-08-08 -- 1992-12-12"]
 
 #dates_with_year=INPUT.replace("XXXX", "2017")
 #_DATE_RANGE=tuple(dates_with_year.split("--"))
@@ -129,6 +130,7 @@ def replace_all_years_with_custom_value(input):
 
 
 def clean_replace_year(end_date):
+    end_date=end_date.strip()
     # if the date is something like "XXXX" , i.e., no month or date, just skip that entry and move on
     if (check_if_just_year(end_date)):
         return False, ""
@@ -137,17 +139,36 @@ def clean_replace_year(end_date):
         return True, end_date_with_custom_year
 
 # if its a date range, expand it to include every single date in the range
+def get_days_count_in_range(start_date,end_date):
+    assert type(start_date) is datetime
+    assert type(end_date) is datetime
+    assert (end_date-start_date).days >1
+    return (end_date-start_date).days
+
 
 all_dates=[]
+
+def list_all_days_in_a_range(start_date, end_date,time_delta):
+    assert type(start_date) is datetime
+    assert type(time_delta) is int
+    dates_in_range=[]
+    for x in range(time_delta):
+        dates_in_range.append(datetime.strftime(start_date+timedelta(x),"%Y-%d-%m"))
+    dates_in_range.append(datetime.strftime(end_date, "%Y-%d-%m"))
+    return dates_in_range
 
 for each_input in INPUTS:
     is_range,range_splits=check_if_range(each_input)
     if(is_range):
-        for end_date in range_splits:
-            flag, end_date_with_custom_year = clean_replace_year(end_date)
-            if(flag):
-                all_dates.append(end_date_with_custom_year)
-            else:
+        flag1, start_date_with_custom_year = clean_replace_year(range_splits[0])
+        flag2, end_date_with_custom_year = clean_replace_year(range_splits[1])
+        if flag1  and flag2:
+            start_date_as_datetime=datetime.strptime(start_date_with_custom_year, "%Y-%m-%d")
+            end_date_as_datetime = datetime.strptime(end_date_with_custom_year, "%Y-%m-%d")
+            days_count=get_days_count_in_range(start_date_as_datetime,end_date_as_datetime)
+            dates_in_range=list_all_days_in_a_range(start_date_as_datetime,end_date_as_datetime,days_count)
+            all_dates.extend(dates_in_range)
+        else:
                 break
     else: #if its a stand alone date, and not range, clean and add it to the list of all_dates
         flag, end_date_with_custom_year = clean_replace_year(each_input)
