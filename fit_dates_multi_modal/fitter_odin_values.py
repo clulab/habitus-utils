@@ -16,11 +16,13 @@ INPUTS=["XXXX-07-07 -- XXXX-07-22","XXXX-07-19 -- XXXX-08-04","XXXX-08-01","XXXX
 
 
 _DATE_FORMAT = '%Y-%m-%d'
+_DATE_FORMAT_ONLY_MMDD = '%m-%d'
 _EMPIRICAL_SCALE_RATIO = 0.15
 _DISTRIBUTION_SIZE = 1000
 _SCALE_RATIO_FOR_DRAWING=1e8
 GENERATE_DUMMY_DATA=True
 CUSTOM_YEAR=1982
+_BIN_SIZE=5
 numpy.random.seed(3)
 
 '''
@@ -225,29 +227,28 @@ fig, axes = plt.subplots(sharex='all',sharey='all',figsize=(13, 7))
 
 
 
-count, bins, ignored = axes.hist(distribution, bins=30, density=True)
+count, bins, ignored = axes.hist(distribution, bins=_BIN_SIZE, density=True)
 
 
 #for printing axes purposes
 def reverse_dates(date,pos=None):
-    #indiv = datetime.strftime((date * _SCALE_RATIO_FOR_DRAWING),"%m-%d")
-    indiv=time.strftime(_DATE_FORMAT, time.localtime(date*_SCALE_RATIO_FOR_DRAWING))
+    indiv=time.strftime(_DATE_FORMAT_ONLY_MMDD, time.localtime(date*_SCALE_RATIO_FOR_DRAWING))
     return indiv
 
 #to plot the actual distribution for a given sigma and mu i.e when using dummy data
-axes.plot(bins, 1/(sigma * np.sqrt(2 * np.pi)) *np.exp( - (bins - mu)**2 / (2 * sigma**2) ),linewidth=2, color='r')
+#axes.plot(bins, 1/(sigma * np.sqrt(2 * np.pi)) *np.exp( - (bins - mu)**2 / (2 * sigma**2) ),linewidth=2, color='r')
 
 labels = axes.get_xticklabels()
 
 plt.setp(labels, rotation=45, horizontalalignment='right')
 
-title_custom="Fitting a kernel density estimation over a multimodal \ndistribution of dates in a given range\n (lines=bandwidth of kernel density function)"
-axes.set(xlim=[bins[0], bins[len(bins)-1]], xlabel='Dates which are edges of each bin', ylabel='No of dates per bin ',
+title_custom="Fitting a kernel density estimation over a multimodal \ndistribution of sowing dates in a given range\n (lines=bandwidth of kernel density function)"
+axes.set(xlim=[bins[0], bins[len(bins)-1]], xlabel='sowing dates', ylabel='No of dates per bin ',
        title=title_custom)
 
 axes.xaxis.set_major_formatter(reverse_dates)
 
-all_bdw=(np.linspace(0.1,1,10)).round(2)
+all_bdw=(np.linspace(0.01,0.03,10)).round(2)
 for bndw in all_bdw:
     kde=KernelDensity(kernel='gaussian',bandwidth=bndw).fit(X=distribution.reshape(-1, 1))
     log_density=kde.score_samples(bins.reshape(-1,1))
