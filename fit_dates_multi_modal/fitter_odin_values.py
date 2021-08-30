@@ -9,7 +9,7 @@ import numpy
 import time
 
 
-INPUTS=["XXXX-07-07 -- XXXX-07-22","XXXX-07-19 -- XXXX-08-04","XXXX-08-01","XXXX-09-25 -- XXXX-10-05","XXXX-05-15","XXXX-07-19 -- XXXX-08-04","1358-XX-XX","XXXX-03-03 -- XXXX-03-11","XXXX-07-14 -- XXXX-07-31","2005-03-18","XXXX-06-17","XXXX-10-25 -- XXXX-12-10","XXXX-10-17","XXXX-10-17","XXXX-03-11 -- XXXX-03-31","2011-XX-XX -- 2018-XX-XX","XXXX-07-07 -- XXXX-07-22","XXXX-07-19 -- XXXX-08-04","2018-05-10","2018-06-21","XXXX-07-19 -- XXXX-08-04","XXXX-06-17","XXXX-12-15 -- XXXX-01-13","XXXX-12-16 --XXXX-01-15","XXXX-05-05"]
+INPUTS=["XXXX-07-07 -- XXXX-07-22","XXXX-07-19 -- XXXX-08-04","XXXX-08-01","XXXX-09-25 -- XXXX-10-05","XXXX-05-15","XXXX-07-19 -- XXXX-08-04","1358-XX-XX","XXXX-03-03 -- XXXX-03-11","XXXX-07-14 -- XXXX-07-31","2005-03-18","XXXX-06-17","XXXX-10-25 -- XXXX-12-10","XXXX-10-17","XXXX-10-17","XXXX-03-11 -- XXXX-03-31","2011-XX-XX -- 2018-XX-XX","XXXX-07-07 -- XXXX-07-22","XXXX-07-19 -- XXXX-08-04","2018-05-10","2018-06-21","XXXX-07-19 -- XXXX-08-04","XXXX-06-17","XXXX-12-15 -- XXXX-01-13","XXXX-12-16 -- XXXX-01-15","XXXX-05-05"]
 
 #dates_with_year=INPUT.replace("XXXX", "2017")
 #_DATE_RANGE=tuple(dates_with_year.split("--"))
@@ -124,7 +124,7 @@ def check_if_just_year(input):
 def check_if_datetime_convertible(input):
     try:
         input_datetime=datetime.strptime(input, _DATE_FORMAT)
-        return input_datetime
+        return True
     except ValueError:
         return False
     except OverflowError :
@@ -141,7 +141,7 @@ def replace_all_years_with_custom_value(input):
 def clean_replace_year(input):
     dat_input=datetime.strptime(input,_DATE_FORMAT)
     dat_input=dat_input.replace(CUSTOM_YEAR,dat_input.month,dat_input.day)
-    return dat_input
+    return True,datetime.strftime(dat_input,_DATE_FORMAT)
 
 
 def clean_replace_year_str(end_date):
@@ -157,8 +157,11 @@ def clean_replace_year_str(end_date):
 def get_days_count_in_range(start_date,end_date):
     assert type(start_date) is datetime
     assert type(end_date) is datetime
-    assert (end_date-start_date).days >1
-    return (end_date-start_date).days
+    #if the date is spilling into next year, the difference will be negative- return 365-diff
+    if ((end_date-start_date).days)>0:
+        return (end_date-start_date).days
+    else:
+        return 365+((end_date-start_date).days)
 
 
 def convert_list_to_unix_timestamp_list(input):
@@ -184,7 +187,7 @@ def list_all_days_in_a_range(start_date, end_date,time_delta):
     dates_in_range.append(datetime.strftime(end_date, "%Y-%m-%d"))
     return dates_in_range
 
-for each_input in INPUTS:
+for index,each_input in enumerate(INPUTS):
     is_range,range_splits=check_if_range(each_input)
     if(is_range):
         flag1, start_date_with_custom_year = clean_replace_year_str(range_splits[0])
@@ -196,15 +199,14 @@ for each_input in INPUTS:
             dates_in_range=list_all_days_in_a_range(start_date_as_datetime,end_date_as_datetime,days_count)
             all_dates_str.extend(dates_in_range)
         else:
-                break
+            continue
     else: #if its a stand alone date, and not range, clean and add it to the list of all_dates
         is_dt_convertible=check_if_datetime_convertible(each_input)
+        flag=False
         if(not is_dt_convertible):
             flag, end_date_with_custom_year = clean_replace_year_str(each_input)
         else:
-            end_date_with_custom_year=clean_replace_year(each_input)
-
-
+            flag,end_date_with_custom_year=clean_replace_year(each_input)
         if (flag):
             all_dates_str.append(end_date_with_custom_year)
 
