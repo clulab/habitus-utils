@@ -23,6 +23,7 @@ def main():
     assert(test_output2["index"][3] == [4, 5])
     assert(test_output2["index"][4] == [5, 7])
     assert(test_output2["pos"][2] == "VERB")
+    assert(processor.tokenize(test_sent2) == ["Silly", "Paul", "killed", "tomato", "and", "rice", "plants", "in", "Atlanta", ",", "Georgia", "."])
     print("Passed Test 2")
     print("*******************************SPACY tests PASSED*******************************")
 
