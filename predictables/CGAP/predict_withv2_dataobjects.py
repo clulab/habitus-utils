@@ -27,7 +27,7 @@ import sys,os,math
 from tqdm import tqdm
 from sklearn.model_selection import KFold
 
-
+#all_countries = ['bgd','cdi','moz','nga','tan','uga']
 
 RUN_ON_SERVER=False
 COUNTRY='bgd'
@@ -35,23 +35,26 @@ COUNTRY='bgd'
 MULTI_LABEL=False
 RANDOM_SEED=3252
 FEATURE_SELECTION_ALGOS=["SelectKBest"]
-FILL_NAN_WITH=-1
 DO_FEATURE_SELECTION=True
-USE_ALL_DATA=True
+MAX_BEST_FEATURE_COUNT='all' #int. else use "all" if you want it to find best k features by combining 1 through all "
+NO_OF_BEST_FEATURES_TO_PRINT=20 #even if the best combination has n features print only top 20
 
-DO_NFCV=False #do n fold cross validation instead of train,dev, test splits
+
+
+DO_NFCV=True #do n fold cross validation instead of train,dev, test splits
 N_FOR_NFCV=5 #number of splits for n fold cross validation
 NFCV_SELECTKBEST_SPLIT_PERCENTAGE =20 #when using nfcv, split the entire data first into two parts, and use only one part for feature selection
 
-#Notes:
+#data related flags:
+
+FILL_NAN_WITH=-1
+USE_ALL_DATA=True
 # ['COUNTRY', 'Country_Decoded']=housekeeping columns
 QNS_TO_AVOID = ['COUNTRY', 'Country_Decoded','D14']
 REGEX_QNS_TO_AVOID = ["F+"] #eg:'F+', '' if you dont know the exact qn name, but want to instead avoid training on a subset. eg. all finance related qns,. i.e starting with F
 QNS_TO_ADD = ['COUNTRY', 'Country_Decoded','D14',"F1"]
 SURVEY_QN_TO_PREDICT= "F58"
 
-MAX_BEST_FEATURE_COUNT=20 #int. else use "all" if you want it to find best k features by combining 1 through all "
-NO_OF_BEST_FEATURES_TO_PRINT=20 #even if the best combination has n features print only top 20
 
 
 
@@ -61,7 +64,7 @@ NO_OF_BEST_FEATURES_TO_PRINT=20 #even if the best combination has n features pri
 random.seed(RANDOM_SEED)
 np.random.seed(RANDOM_SEED)
 
-all_countries = ['bgd','cdi','moz','nga','tan','uga']
+
 
 logger = logging.getLogger(__name__)
 def get_git_info():
@@ -188,12 +191,7 @@ def select_kbest_feature_indices(feature_count, x_train, y_train):
     return best_feature_indices,selectK
 
 def find_best_feature_count():
-    # for feature_count in tqdm(range(1, MAX_BEST_FEATURE_COUNT), desc="best features", total=MAX_BEST_FEATURE_COUNT):
     best_feature_indices, selectK = select_kbest_feature_indices(MAX_BEST_FEATURE_COUNT, x_train, y_train)
-    # selectK = SelectKBest(mutual_info_classif, k=feature_count)
-    # selectK.fit(x_train, y_train)
-    # selectMask = selectK.get_support()
-    # best_feature_indices = np.where(selectMask)[0].tolist()
     x_train_selected = x_train.iloc[:, best_feature_indices]
     x_dev_selected = x_dev.iloc[:, best_feature_indices]
     x_train_selected = np.asarray(x_train_selected)
@@ -466,19 +464,28 @@ if (DO_NFCV == True):
         f"best_feature_count: {str(len(best_feature_indices))}"        
         f"\ntop best features:{best_feature_names}")
 
+    merge_n_test_folds=pd.DataFrame()
+
     for index,(train_index,test_index) in enumerate(kf.split(data_not_used_for_selectkbest)):
         logger.info(f"*****************starting new fold. Fold number {index+1}")
         train=data_not_used_for_selectkbest.iloc[train_index]
         #also attach back the part you used for seleckbest. note, use only in training. not in dev
         train=pd.concat([train,data_for_selectkbest],axis=0)
         dev=data_not_used_for_selectkbest.iloc[test_index] #in nfcv world there is only train test. but here using the word dev for maintaining consistency with non nfcv world
+
+        #collecting all test folds to use later for majority basecalculation across
+        merge_n_test_folds = pd.concat([dev, merge_n_test_folds], axis=0)
+
         maj_class, baseline = find_majority_baseline_binary(dev, SURVEY_QN_TO_PREDICT)
-        logger.info(f"majority baseline={round(baseline,2)}, majority class={maj_class} dev data for this fold")
+        #logger.info(f"majority baseline={round(baseline,2)}, majority class={maj_class} dev data for this fold")
 
 
         accuracy=do_training_predict_given_train_dev_splits_without_feature_selection(model, train, dev, test,best_feature_indices)
         logger.info(
             f"nbest_feature_accuracy: {str(round(accuracy*100,2))}")
+
+    maj_class, baseline = find_majority_baseline_binary(merge_n_test_folds, SURVEY_QN_TO_PREDICT)
+    logger.info(f" for all n folds combined majority baseline={round(baseline,2)}, majority class={maj_class}:")
 
 else:
     train, test_dev = train_test_split(df_combined, test_size=0.2, shuffle=True)
