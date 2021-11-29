@@ -16,8 +16,11 @@ def update_sentence_level_counters(datapoint):
     has_senegal_and_year_in_the_same_sentence = False
     has_senegal_and_crop_in_the_same_sentence = False
 
+    value_counter.update(['total__sentences'])
+
     #parse this line only if (its digest) it was not seen before
-    bytes_sent=  datapoint['sentenceText'].encode('utf-8')
+    #bytes_sent=  datapoint['sentenceText'].encode('utf-8')
+    bytes_sent = bytes(datapoint['sentenceText'], 'utf-8')
     digest = hashlib.sha224(bytes_sent).hexdigest()
     if(digest not in set_all_lines):
         set_all_lines.add(digest)
@@ -58,6 +61,7 @@ def update_sentence_level_counters(datapoint):
         #- How many lines have all three. YEAR, CROP, LOC in same sentence
         if (not datapoint['mostFreqDate0Sent'] == "N/A") and (not datapoint['mostFreqCrop0Sent']== "N/A") and (not datapoint['mostFreqLoc0Sent']== "N/A"):
             value_counter.update(['has_year_crop_loc_all3_samesent'])
+            print(datapoint["sentenceText"])
 
         return value_counter
 
@@ -71,6 +75,7 @@ def read_files():
                 with open(filepath) as fp:
                     data= (json.load(fp))
                     for index_data,datapoint in enumerate(data):
+                        #datapoint= json.loads(datapoint.decode("utf-8", "ignore"))
                         update_sentence_level_counters(datapoint)
                         #todo write to disk after 1000 files, not datapoints
                         if index_data % 2 == 0:
@@ -81,4 +86,7 @@ def read_files():
 
 
 if __name__ == '__main__':
-    read_files()
+    try:
+        read_files()
+    except (UnicodeDecodeError):
+        print("got unicode error. ignoring")
