@@ -9,8 +9,10 @@ set_all_lines=set()
 value_counter=collections.Counter()
 
 
+
 # takes a json datapoint and increases Counter
-def update_counters(datapoint):
+def update_sentence_level_counters(datapoint):
+    has_senegal_anywhere_in_the_sentence = False
     set_all_lines.add(datapoint['sentenceText'])
     value_counter['total_unique_sentences'] = len(set_all_lines)
 
@@ -18,6 +20,7 @@ def update_counters(datapoint):
     for k, v in datapoint.items():
         if ("senegal" in v.lower()):
             value_counter.update(['has_senegal_anywhere_in_the_sentence'])
+            has_senegal_anywhere_in_the_sentence=True
             break
 
     # how many sentences has a location in the same sentence
@@ -26,6 +29,10 @@ def update_counters(datapoint):
 
     # - How many lines have YEAR.
     if not datapoint['mostFreqDate0Sent'] == "N/A":
+
+        # How many lines have senegal somewhere and also has a YEAR mentioned
+        if has_senegal_anywhere_in_the_sentence==True:
+            value_counter.update(['has_senegal_and_year_same_sentence'])
         value_counter.update(['has_year_same_sentence'])
 
     # how many sentences has a location in the same sentence
@@ -48,7 +55,7 @@ def read_files():
                 with open(filepath) as fp:
                     data= (json.load(fp))
                     for index_data,datapoint in enumerate(data):
-                        update_counters(datapoint)
+                        update_sentence_level_counters(datapoint)
                         #todo write to disk after 1000 files, not datapoints
                         if index_data % 2 == 0:
                             with open("analysis.json", "w") as out:

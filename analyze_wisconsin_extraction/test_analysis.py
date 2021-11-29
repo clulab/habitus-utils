@@ -42,13 +42,14 @@ input_data=[{
 
 def test_answer(input_data):
     for datapoint in input_data:
-        update_counters(datapoint)
+        update_sentence_level_counters(datapoint)
     assert value_counter["total_unique_sentences"]==2
     assert value_counter["has_senegal_anywhere_in_the_sentence"] == 2
     assert value_counter["has_loc_same_sentence"] == 1
     assert value_counter["has_year_same_sentence"] == 2
     assert value_counter["has_crop_same_sentence"] == 1
     assert value_counter["has_year_crop_loc_all3_samesent"] == 1
+    assert value_counter["has_senegal_and_year_same_sentence"] == 2
 
 
 
