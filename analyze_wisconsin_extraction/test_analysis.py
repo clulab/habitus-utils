@@ -75,6 +75,9 @@ def test_answer(input_data):
     assert value_counter["has_senegal_and_year_same_sentence"] == 2
     assert value_counter["has_senegal_and_crop_same_sentence"] == 1
     assert value_counter["has_senegal_year_and_crop_same_sentence"] == 1
+    assert value_counter["has_some_context"] == 2
+    assert value_counter["has_senegal_as_mostFreqLoc"] == 1
+
 
 
 

@@ -16,7 +16,7 @@ def update_sentence_level_counters(datapoint):
     has_senegal_and_year_in_the_same_sentence = False
     has_senegal_and_crop_in_the_same_sentence = False
 
-    value_counter.update(['total__sentences'])
+    value_counter.update(['total_sentences'])
 
     #parse this line only if (its digest) it was not seen before
     #bytes_sent = bytes(datapoint['sentenceText'], 'utf-8')
@@ -31,6 +31,16 @@ def update_sentence_level_counters(datapoint):
             if ("senegal" in v.lower()):
                 value_counter.update(['has_senegal_anywhere_in_the_sentence'])
                 has_senegal_anywhere_in_the_sentence=True
+                break
+
+        # How many rows have Senegal as mostFreqLoc.
+        if datapoint['mostFreqLoc'].lower() == "senegal":
+            value_counter.update(['has_senegal_as_mostFreqLoc'])
+
+        # How many rows have some context anywhere.
+        for k, v in datapoint.items():
+            if ("mostFreq" in k) and (not v == "N/A"):
+                value_counter.update(['has_some_context'])
                 break
 
         # how many sentences has a location in the same sentence
