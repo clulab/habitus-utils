@@ -25,7 +25,30 @@ input_data=[{
         "variableText": "Seeding",
         "valueText": "N",
         "valueNorm": "n",
-        "sentenceText": "While the results in Senegal were unconclusive for extractable Al , Fe and Co , the little but positive effects of Mulching and Seeding on N , K , Mg and Ca budgets point to a slightly beneficial influence of these emergency stabilisation treatments on burned soil quality .",
+        "sentenceText": "While the results in Senegal were unconclusive for extractable Al , Fe and Co , the little "
+                        "but positive effects of Mulching and Seeding on N , K , Mg and Ca budgets point to a "
+                        "slightly beneficial influence of these emergency stabilisation treatments on burned soil quality .",
+        "inputFilename": "5515116ce1382394b500cd7d_input_text.txt",
+        "mostFreqLoc0Sent": "Senegal",
+        "mostFreqLoc1Sent": "N/A",
+        "mostFreqLoc": "nw spain",
+        "mostFreqDate0Sent": "1998",
+        "mostFreqDate1Sent": "N/A",
+        "mostFreqDate": "2011",
+        "mostFreqCrop0Sent": "Paddy",
+        "mostFreqCrop1Sent": "N/A",
+        "mostFreqCrop": "N/A"
+    },
+
+    #add a replica of previous and check no test case fails., because duplicate datapoints shouldnt be processed
+
+    {
+        "variableText": "Seeding",
+        "valueText": "N",
+        "valueNorm": "n",
+        "sentenceText": "While the results in Senegal were unconclusive for extractable Al , Fe and Co , the little "
+                        "but positive effects of Mulching and Seeding on N , K , Mg and Ca budgets point to a "
+                        "slightly beneficial influence of these emergency stabilisation treatments on burned soil quality .",
         "inputFilename": "5515116ce1382394b500cd7d_input_text.txt",
         "mostFreqLoc0Sent": "Senegal",
         "mostFreqLoc1Sent": "N/A",
@@ -50,6 +73,9 @@ def test_answer(input_data):
     assert value_counter["has_crop_same_sentence"] == 1
     assert value_counter["has_year_crop_loc_all3_samesent"] == 1
     assert value_counter["has_senegal_and_year_same_sentence"] == 2
+    assert value_counter["has_senegal_and_crop_same_sentence"] == 1
+    assert value_counter["has_senegal_year_and_crop_same_sentence"] == 1
+
 
 
 
