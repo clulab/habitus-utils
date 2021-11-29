@@ -19,11 +19,11 @@ def update_sentence_level_counters(datapoint):
     value_counter.update(['total__sentences'])
 
     #parse this line only if (its digest) it was not seen before
-    #bytes_sent=  datapoint['sentenceText'].encode('utf-8')
-    bytes_sent = bytes(datapoint['sentenceText'], 'utf-8')
-    digest = hashlib.sha224(bytes_sent).hexdigest()
-    if(digest not in set_all_lines):
-        set_all_lines.add(digest)
+    #bytes_sent = bytes(datapoint['sentenceText'], 'utf-8')
+    #digest = hashlib.sha224(bytes_sent).hexdigest()
+
+    if(datapoint['sentenceText'] not in set_all_lines):
+        set_all_lines.add(datapoint['sentenceText'])
         value_counter['total_unique_sentences'] = len(set_all_lines)
 
         # How many rows have Senegal anywhere.
