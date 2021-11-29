@@ -1,4 +1,4 @@
-import os,sys, collections, json
+import os, collections, json, hashlib
 
 
 #data_folder="/Users/mithunpaul/research/habitus/data_wisconsin_parsing"
@@ -16,9 +16,11 @@ def update_sentence_level_counters(datapoint):
     has_senegal_and_year_in_the_same_sentence = False
     has_senegal_and_crop_in_the_same_sentence = False
 
-    #parse this line only if it was not seen before
-    if(datapoint['sentenceText'] not in set_all_lines):
-        set_all_lines.add(datapoint['sentenceText'])
+    #parse this line only if (its digest) it was not seen before
+    bytes_sent=  datapoint['sentenceText'].encode('utf-8')
+    digest = hashlib.sha224(bytes_sent).hexdigest()
+    if(digest not in set_all_lines):
+        set_all_lines.add(digest)
         value_counter['total_unique_sentences'] = len(set_all_lines)
 
         # How many rows have Senegal anywhere.
