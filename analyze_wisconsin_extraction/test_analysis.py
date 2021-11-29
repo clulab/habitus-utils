@@ -1,0 +1,47 @@
+import pytest
+from main import *
+
+
+input_data=[{
+    "variableText" : "plant",
+    "valueText" : "P",
+    "valueNorm" : "p",
+    "sentenceText" : "Cropping experiment ( Guo , 1997 ) : In order to interpret the biophysical meaning of the two pools , a cropping experiment was used to relate the soil P pools in the adsorption experiment with plant P uptake .",
+    "inputFilename" : "5514cd5ce1382394b500cc74_input_text.txt",
+    "mostFreqLoc0Sent" : "N/A",
+    "mostFreqLoc1Sent" : "wahiawa",
+    "mostFreqLoc" : "soc",
+    "mostFreqDate0Sent" : "1997",
+    "mostFreqDate1Sent" : "1997",
+    "mostFreqDate" : "1997",
+    "mostFreqCrop0Sent" : "N/A",
+    "mostFreqCrop1Sent" : "N/A",
+    "mostFreqCrop" : "corn"
+  },
+
+    {
+        "variableText": "Seeding",
+        "valueText": "N",
+        "valueNorm": "n",
+        "sentenceText": "While the results were unconclusive for extractable Al , Fe and Co , the little but positive effects of Mulching and Seeding on N , K , Mg and Ca budgets point to a slightly beneficial influence of these emergency stabilisation treatments on burned soil quality .",
+        "inputFilename": "5515116ce1382394b500cd7d_input_text.txt",
+        "mostFreqLoc0Sent": "N/A",
+        "mostFreqLoc1Sent": "N/A",
+        "mostFreqLoc": "nw spain",
+        "mostFreqDate0Sent": "N/A",
+        "mostFreqDate1Sent": "N/A",
+        "mostFreqDate": "2011",
+        "mostFreqCrop0Sent": "N/A",
+        "mostFreqCrop1Sent": "N/A",
+        "mostFreqCrop": "N/A"
+    }
+]
+
+
+def test_answer(input_data):
+    for datapoint in input_data:
+        update_counters(datapoint)
+    assert value_counter["has_crop_same_sentence"]==3
+
+
+test_answer(input_data)
