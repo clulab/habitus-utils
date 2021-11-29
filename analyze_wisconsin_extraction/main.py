@@ -1,4 +1,4 @@
-import os, collections, json, hashlib
+import os, collections, json,jsonlines
 
 
 #data_folder="/Users/mithunpaul/research/habitus/data_wisconsin_parsing"
@@ -89,8 +89,11 @@ def read_files():
                         update_sentence_level_counters(datapoint)
                         #todo write to disk after 1000 files, not datapoints
                         if index_data % 2 == 0:
-                            with open("analysis.json", "w") as out:
-                                json.dump(value_counter, out)
+                            with jsonlines.open('analysis.jsonl', mode='w') as writer:
+                                writer.write(value_counter)
+
+                            # with open("analysis.json", "w") as out:
+                            #     json.dump(value_counter, out)
 
 
 
