@@ -1,0 +1,9 @@
+sklearn
+pandas
+numpy
+scipy
+matplotlib
+tqdm
+gitpython
+scikit-multilearn
+nltk

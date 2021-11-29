@@ -9,8 +9,9 @@ import numpy
 import time
 
 
-INPUTS=["XXXX-07-07 -- XXXX-07-22","XXXX-07-19 -- XXXX-08-04","XXXX-08-01","XXXX-09-25 -- XXXX-10-05","XXXX-05-15","XXXX-07-19 -- XXXX-08-04","1358-XX-XX","XXXX-03-03 -- XXXX-03-11","XXXX-07-14 -- XXXX-07-31","2005-03-18","XXXX-06-17","XXXX-10-25 -- XXXX-12-10","XXXX-10-17","XXXX-10-17","XXXX-03-11 -- XXXX-03-31","2011-XX-XX -- 2018-XX-XX","XXXX-07-07 -- XXXX-07-22","XXXX-07-19 -- XXXX-08-04","2018-05-10","2018-06-21","XXXX-07-19 -- XXXX-08-04","XXXX-06-17","XXXX-12-15 -- XXXX-01-13","XXXX-12-16 -- XXXX-01-15","XXXX-05-05"]
-
+#INPUTS_BEFORE_ERROR_ANALYSIS=["XXXX-07-07 -- XXXX-07-22","XXXX-07-19 -- XXXX-08-04","XXXX-08-01","XXXX-09-25 -- XXXX-10-05","XXXX-05-15","XXXX-07-19 -- XXXX-08-04","1358-XX-XX","XXXX-03-03 -- XXXX-03-11","XXXX-07-14 -- XXXX-07-31","2005-03-18","XXXX-06-17","XXXX-10-25 -- XXXX-12-10","XXXX-10-17","XXXX-10-17","XXXX-03-11 -- XXXX-03-31","2011-XX-XX -- 2018-XX-XX","XXXX-07-07 -- XXXX-07-22","XXXX-07-19 -- XXXX-08-04","2018-05-10","2018-06-21","XXXX-07-19 -- XXXX-08-04","XXXX-06-17","XXXX-12-15 -- XXXX-01-13","XXXX-12-16 -- XXXX-01-15","XXXX-05-05"]
+#INPUTS_AFTER_ERROR_ANALYSIS
+INPUTS=["XXXX-07-07 -- XXXX-07-22","XXXX-07-19 -- XXXX-08-04","XXXX-07-19 -- XXXX-08-04","XXXX-03-03 -- XXXX-03-11","XXXX-07-14 -- XXXX-07-31","2005-03-18"]
 #dates_with_year=INPUT.replace("XXXX", "2017")
 #_DATE_RANGE=tuple(dates_with_year.split("--"))
 
@@ -103,7 +104,6 @@ def check_year_only()
 def check_if_range(input):
     splits=input.split("--")
     if len(splits)>1:
-        print(f"{input} its a range")
         return True, splits
     return False, None
 
