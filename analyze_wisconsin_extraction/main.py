@@ -61,7 +61,7 @@ def update_sentence_level_counters(datapoint):
         #- How many lines have all three. YEAR, CROP, LOC in same sentence
         if (not datapoint['mostFreqDate0Sent'] == "N/A") and (not datapoint['mostFreqCrop0Sent']== "N/A") and (not datapoint['mostFreqLoc0Sent']== "N/A"):
             value_counter.update(['has_year_crop_loc_all3_samesent'])
-            print(datapoint["sentenceText"])
+
 
         return value_counter
 
@@ -90,3 +90,4 @@ if __name__ == '__main__':
         read_files()
     except (UnicodeDecodeError):
         print("got unicode error. ignoring")
+        value_counter.update(['sents_with_unicode_errors'])
