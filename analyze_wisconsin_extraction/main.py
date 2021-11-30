@@ -77,7 +77,7 @@ def update_sentence_level_counters(datapoint):
         if(has_senegal_and_crop_in_the_same_sentence ==True and has_senegal_and_year_in_the_same_sentence==True):
             value_counter.update(['has_senegal_year_and_crop_same_sentence'])
             print(f"sample sentence for  has_senegal_year_and_crop_same_sentence:{datapoint}")
-            sys.exit()
+            
 
 
         #- How many lines have all three. YEAR, CROP, LOC in same sentence
