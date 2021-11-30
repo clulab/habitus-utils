@@ -1,23 +1,22 @@
-import os, collections, json, sys
+import os, collections, json, sys, jsonlines
 
-
-#data_folder="/Users/mithunpaul/research/habitus/data_wisconsin_parsing"
 
 data_folder="data"
-
 set_all_lines=set()
 value_counter=collections.Counter()
 
-
-
 # takes a json datapoint and increases Counter
 def update_sentence_level_counters(datapoint):
-    with open("stdout.txt", "a") as stdout , open("all_lines.txt", "a") as allines:
+    with open("stdout.txt", "a") as stdout , open("all_lines.txt", "a") as allines_txt , open("all_lines.json", "a") as allines_json ,  jsonlines.open('all_lines.jsonl',"a") as allines_jsonl:
         has_senegal_anywhere_in_the_sentence = False
         has_senegal_and_year_in_the_same_sentence = False
         has_senegal_and_crop_in_the_same_sentence = False
         value_counter.update(['total_sentences'])
-        allines.write(f"{datapoint}\n")
+
+        #write all extracted line to one single file, tsv and json
+        allines_txt.write(f"{datapoint}")
+        json.dump(datapoint, allines_json, indent=4)
+        allines_jsonl.write(datapoint)
 
         if(datapoint['sentenceText'] not in set_all_lines):
                 set_all_lines.add(datapoint['sentenceText'])
@@ -98,6 +97,9 @@ def read_files():
     full_path=os.path.join(os.getcwd(),data_folder)
     initialize_file("stdout.txt")
     initialize_file("all_lines.txt")
+    initialize_file("all_lines.json")
+    initialize_file("all_lines.jsonl")
+
     for root, subdir, files in os.walk(full_path):
         for index_files,file in enumerate(files):
             if ("json") in file:
