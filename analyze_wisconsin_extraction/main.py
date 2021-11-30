@@ -82,6 +82,7 @@ def update_sentence_level_counters(datapoint):
                 value_counter.update(['has_senegal_year_and_crop_same_sentence'])
                 stdout.write(f"sample sentence for  has_senegal_year_and_crop_same_sentence:{datapoint}")
                 print(f"sample sentence for  has_senegal_year_and_crop_same_sentence:{datapoint}")
+                exit()
 
             #- How many lines have all three. YEAR, CROP, LOC in same sentence
             if (not datapoint['mostFreqDate0Sent'] == "N/A") and (not datapoint['mostFreqCrop0Sent']== "N/A") and (not datapoint['mostFreqLoc0Sent']== "N/A"):
