@@ -17,7 +17,7 @@ def update_sentence_level_counters(datapoint):
         has_senegal_and_year_in_the_same_sentence = False
         has_senegal_and_crop_in_the_same_sentence = False
         value_counter.update(['total_sentences'])
-        allines.write(f"sample sentence for  has_senegal_anywhere_in_the_sentence:{datapoint}\n")
+        allines.write(f"{datapoint}\n")
 
         if(datapoint['sentenceText'] not in set_all_lines):
                 set_all_lines.add(datapoint['sentenceText'])
