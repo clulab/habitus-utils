@@ -1,4 +1,4 @@
-import os, collections, json,jsonlines
+import os, collections, json, sys
 
 
 #data_folder="/Users/mithunpaul/research/habitus/data_wisconsin_parsing"
@@ -31,11 +31,13 @@ def update_sentence_level_counters(datapoint):
             if ("senegal" in v.lower()):
                 value_counter.update(['has_senegal_anywhere_in_the_sentence'])
                 has_senegal_anywhere_in_the_sentence=True
+
                 break
 
         # How many rows have Senegal as mostFreqLoc.
         if datapoint['mostFreqLoc'].lower() == "senegal":
             value_counter.update(['has_senegal_as_mostFreqLoc'])
+
 
         # How many rows have some context anywhere.
         for k, v in datapoint.items():
@@ -47,14 +49,22 @@ def update_sentence_level_counters(datapoint):
         if not datapoint['mostFreqLoc0Sent'] == "N/A":
             value_counter.update(['has_loc_same_sentence'])
 
+
+
         # - How many lines have YEAR.
         if not datapoint['mostFreqDate0Sent'] == "N/A":
-
             # How many lines have senegal somewhere and also has a YEAR mentioned
             if has_senegal_anywhere_in_the_sentence==True:
                 value_counter.update(['has_senegal_and_year_same_sentence'])
                 has_senegal_and_year_in_the_same_sentence = True
             value_counter.update(['has_year_same_sentence'])
+
+            # How many lines have senegal as mostFreqLoc0Sent and also has a value for mostFreqDate0Sent
+            if not datapoint['mostFreqDate0Sent'] == "N/A":
+                if not datapoint['mostFreqLoc'] == "N/A" and datapoint['mostFreqLoc'].lower() == "senegal":
+                    value_counter.update(['has_senegal_as_mostFreqLoc0Sent_and_a_mostFreqDate0Sent'])
+
+
 
         # how many sentences has a crop in the same sentence
         if not datapoint['mostFreqCrop0Sent'] == "N/A":
@@ -87,12 +97,8 @@ def read_files():
                     for index_data,datapoint in enumerate(data):
                         #datapoint= json.loads(datapoint.decode("utf-8", "ignore"))
                         update_sentence_level_counters(datapoint)
-                        #todo write to disk after 1000 files, not datapoints
-                        if index_data % 2 == 0:
-                            # with jsonlines.open('analysis.jsonl', mode='w') as writer:
-                            #     writer.write(value_counter)
-                            with open("analysis.json", "w") as out:
-                                json.dump(value_counter, out,indent=4)
+                        with open("analysis.json", "w") as out:
+                            json.dump(value_counter, out,indent=4)
 
 
 
