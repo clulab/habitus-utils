@@ -11,16 +11,13 @@ value_counter=collections.Counter()
 
 
 # takes a json datapoint and increases Counter
-def update_sentence_level_counters(datapoint,stdout):
-
+def update_sentence_level_counters(datapoint):
+    with open("stdout.txt", "a") as stdout:
         has_senegal_anywhere_in_the_sentence = False
         has_senegal_and_year_in_the_same_sentence = False
         has_senegal_and_crop_in_the_same_sentence = False
         value_counter.update(['total_sentences'])
 
-        #parse this line only if (its digest) it was not seen before
-        #bytes_sent = bytes(datapoint['sentenceText'], 'utf-8')
-        #digest = hashlib.sha224(bytes_sent).hexdigest()
 
         if(datapoint['sentenceText'] not in set_all_lines):
             set_all_lines.add(datapoint['sentenceText'])
@@ -31,7 +28,7 @@ def update_sentence_level_counters(datapoint,stdout):
                 if ("senegal" in v.lower()):
                     value_counter.update(['has_senegal_anywhere_in_the_sentence'])
                     has_senegal_anywhere_in_the_sentence=True
-                    stdout.write(f"sample sentence for  has_loc_same_sentence:{datapoint}")
+                    stdout.write(f"sample sentence for  has_senegal_anywhere_in_the_sentence:{datapoint}")
                     break
 
             # How many rows have Senegal as mostFreqLoc.
@@ -43,6 +40,7 @@ def update_sentence_level_counters(datapoint,stdout):
             for k, v in datapoint.items():
                 if ("mostFreq" in k) and (not v == "N/A"):
                     value_counter.update(['has_some_context'])
+                    stdout.write(f"sample sentence for  has_some_context:{datapoint}\n")
                     break
 
             # how many sentences has a location in the same sentence
@@ -79,7 +77,7 @@ def update_sentence_level_counters(datapoint,stdout):
             if(has_senegal_and_crop_in_the_same_sentence ==True and has_senegal_and_year_in_the_same_sentence==True):
                 value_counter.update(['has_senegal_year_and_crop_same_sentence'])
                 stdout.write(f"sample sentence for  has_senegal_year_and_crop_same_sentence:{datapoint}")
-                print(f"sample sentence for  has_senegal_year_and_crop_same_sentence:{datapoint}")
+                
 
 
             #- How many lines have all three. YEAR, CROP, LOC in same sentence
@@ -90,18 +88,19 @@ def update_sentence_level_counters(datapoint,stdout):
 
 def read_files():
     full_path=os.path.join(os.getcwd(),data_folder)
-    with open("stdout.txt", "w") as stdout:
-        for root, subdir, files in os.walk(full_path):
-            for index_files,file in enumerate(files):
-                if ("json") in file:
-                    input_filepath=os.path.join(root,file)
-                    print(input_filepath)
-                    with open(input_filepath) as fp:
-                        data= (json.load(fp))
-                        for index_data,datapoint in enumerate(data):
-                            update_sentence_level_counters(datapoint,stdout)
-                            with open("analysis.json", "w") as out:
-                                json.dump(value_counter, out,indent=4)
+    fp=open("stdout.txt", "w")
+    fp.close()
+    for root, subdir, files in os.walk(full_path):
+        for index_files,file in enumerate(files):
+            if ("json") in file:
+                input_filepath=os.path.join(root,file)
+                print(input_filepath)
+                with open(input_filepath) as fp:
+                    data= (json.load(fp))
+                    for index_data,datapoint in enumerate(data):
+                        update_sentence_level_counters(datapoint)
+                        with open("analysis.json", "w") as out:
+                            json.dump(value_counter, out,indent=4)
 
 
 
