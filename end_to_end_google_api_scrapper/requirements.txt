@@ -1,3 +1,0 @@
-pdfminer.six
-spacy
-google-api-python-client
