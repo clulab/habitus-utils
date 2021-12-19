@@ -102,7 +102,7 @@ def main():
 	download_pdfs_from_links(pdf_links, pdf_storage)
 	print("Downloaded pdfs from scrapped links!")
 	# Now convert all downloaded pdfs to txt files
-	pdf_to_txt(pdf_storage, os.path.join(args.pdf_storage, args.target_country, "plain_text"), args.overwrite)
+	pdf_to_txt(pdf_storage, os.path.join(args.pdf_storage, "plain_text"), args.overwrite)
 	print("Converted pdf files to txt!")
 	# calculating similarity scores
 

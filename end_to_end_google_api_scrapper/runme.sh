@@ -1,4 +1,5 @@
 pip install pdfminer.six
+pip install google
 pip install google-api-python-client
 pip install -U pip setuptools wheel
 pip install -U spacy
