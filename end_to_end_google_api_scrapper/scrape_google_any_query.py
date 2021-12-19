@@ -37,7 +37,7 @@ parser.add_argument("--google_developer_key", help="The Google API developer key
 					default="AIzaSyCAzULm7A5v3-702_TQ1xwF66J2mCa2xxA")
 parser.add_argument("--custom_search_id", help="The Google custom search ID, which can be created as instructed in README.md",
 					default="b47fb500623cddc82")
-parser.add_argument("--overwrite", help="Overwrite the pdf download folder", nargs="?", const=True, default=True, type=bool)
+parser.add_argument("--overwrite", help="Overwrite the pdf download folder", nargs="?", const=True, default=False, type=bool)
 # parse defined arguments for later use.
 args = parser.parse_args()
 
