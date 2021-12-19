@@ -24,12 +24,7 @@ import sys
 # Initialize Python argument parser.
 parser = argparse.ArgumentParser()
 # define arguments that will be passed with value at the runtime in terminal
-parser.add_argument("--num_sents", help="Number of sentences to check if target countries and at least one candidate countries occur together", 
-					type=int, default=1, nargs="?", const=3)
-parser.add_argument("--target_country", help="Country with which we want to find similar countries.", default="bangladesh")
-parser.add_argument("--similar_countries", help="List of countries that we want to calculate similarity score.", 
-					default=["mozambique", "nigeria", "uganda"], type=list)
-parser.add_argument("--pdf_storage", help="Location on the device to store pdfs downloaded based on specified credentials.", 
+parser.add_argument("--pdf_storage", help="Location on the device to store pdfs downloaded based on specified credentials.",
 					default="dowloaded_pdfs")
 parser.add_argument("--query",
 					help="what query you wanna use for google crawling",
@@ -42,7 +37,7 @@ parser.add_argument("--google_developer_key", help="The Google API developer key
 					default="AIzaSyCAzULm7A5v3-702_TQ1xwF66J2mCa2xxA")
 parser.add_argument("--custom_search_id", help="The Google custom search ID, which can be created as instructed in README.md",
 					default="b47fb500623cddc82")
-parser.add_argument("--overwrite", help="Overwrite the pdf download folder", nargs="?", const=True, default=False, type=bool)
+parser.add_argument("--overwrite", help="Overwrite the pdf download folder", nargs="?", const=True, default=True, type=bool)
 # parse defined arguments for later use.
 args = parser.parse_args()
 
@@ -82,7 +77,9 @@ def get_pdf_links_related_to_target_and_similar_countries(query):
 				# we do not need to define type:pdf and language: english here. It will be defined when call
 				# request to Google API. Also, here we do not have to use special format that Google API use
 				# human-readable text will be automatically converted by request function implemented by the API
-				partial_links, isEmpty = google_pdf_links_crawler(args.google_developer_key, args.custom_search_id, query, start=i, lr="lang_en", fileType='pdf')
+				partial_links, isEmpty = google_pdf_links_crawler(args.google_developer_key,
+																  args.custom_search_id, query, start=i, lr="lang_en",
+																  fileType='pdf')
 				if not isEmpty:
 					pdflinks += partial_links
 	return pdflinks
@@ -90,8 +87,7 @@ def get_pdf_links_related_to_target_and_similar_countries(query):
 def main():
 	pdf_links = get_pdf_links_related_to_target_and_similar_countries(args.query)
 	print("Retrieved all the pdf links for customized queries!")
-	#pdf_links = ['http://www.fao.org/3/i5251e/i5251e.pdf', 'https://files.eric.ed.gov/fulltext/EJ1085011.pdf', 'https://www.jhsph.edu/ivac/wp-content/uploads/2018/11/Pneumonia-and-Diarrhea-Progress-Report-2018-1.pdf', 'https://dataportal.bbcmediaaction.org/site/assets/uploads/2016/07/Building-Resilience-research-report.pdf', 'https://www.gsma.com/mobilefordevelopment/wp-content/uploads/2019/02/GSMA-The-Mobile-Gender-Gap-Report-2019.pdf', 'https://pubdocs.worldbank.org/en/856881567524290888/Reforms-to-improve-learning-30-Aug-TPW-FINAL.pdf', 'https://www.oecd.org/countries/tanzania/48912863.pdf', 'https://www.sida.se/contentassets/ed044d87cc504c93b3c58427c7dc0be5/educational-policy-analysis_615.pdf', 'https://assets.ey.com/content/dam/ey-sites/ey-com/en_gl/topics/growth/1608Electricity-and-Education.pdf']	
-	pdf_storage = os.path.join(args.pdf_storage, args.target_country, "pdfs")
+	pdf_storage = args.pdf_storage
 	# Check if the path already exist or not, either overwrite or abort the execuation. 
 	if not os.path.exists(pdf_storage):
 		os.makedirs(pdf_storage)
@@ -103,15 +99,12 @@ def main():
 			print("Directory already exists, use --overwrite to move forward")
 			sys.exit(1) # give 1 here so that the linux system know that we encounter an error.
 	# It is good to start download to the specified folder.
-	download_pdfs_from_links(pdf_links, pdf_storage, args.target_country)
+	download_pdfs_from_links(pdf_links, pdf_storage)
 	print("Downloaded pdfs from scrapped links!")
 	# Now convert all downloaded pdfs to txt files
 	pdf_to_txt(pdf_storage, os.path.join(args.pdf_storage, args.target_country, "plain_text"), args.overwrite)
 	print("Converted pdf files to txt!")
 	# calculating similarity scores
-	similarity_scores = get_country_similarity_scores(os.path.join(args.pdf_storage, args.target_country, "plain_text"), args.num_sents, 
-								args.target_country, args.similar_countries, args.factors_of_interest)
-	print(similarity_scores)
 
 if __name__ == '__main__':
 	main()
