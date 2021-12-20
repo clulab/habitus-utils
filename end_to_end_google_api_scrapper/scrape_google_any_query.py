@@ -28,11 +28,7 @@ parser.add_argument("--pdf_storage", help="Location on the device to store pdfs 
 					default="dowloaded_pdfs")
 parser.add_argument("--query",
 					help="what query you wanna use for google crawling",
-					default="Senegal rice planted "
-							"OR sowed OR planting OR sowing OR planted in OR sowed in OR planted on "
-							"OR sowed on OR plants in Or sows on OR date OR time OR start "
-							"january OR february OR march OR april OR may OR jun OR august OR "
-							"september OR october OR november OR december after:2020-03-01")
+					default="Senegal rice think OR believe OR explain OR doubt OR trust OR likely OR possible OR certain -recipe -dish -Condoleezza before:2020-03-01")
 parser.add_argument("--google_developer_key", help="The Google API developer key which can be created as instructed in README.md", 
 					default="AIzaSyCAzULm7A5v3-702_TQ1xwF66J2mCa2xxA")
 parser.add_argument("--custom_search_id", help="The Google custom search ID, which can be created as instructed in README.md",
