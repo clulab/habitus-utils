@@ -19,6 +19,7 @@ from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
 from pdfminer.converter import TextConverter
 from pdfminer.layout import LAParams
 from pdfminer.pdfpage import PDFPage
+from tqdm import tqdm
 
 def isWindows():
     return platform.system() == "Windows"
@@ -66,7 +67,8 @@ def pdf_to_txt(inputdir, outputdir, overwrite=False):
             sys.exit()
     failed = 0
     converted = 0
-    for pdffile in os.listdir(inputdir):
+
+    for pdffile in tqdm(os.listdir(inputdir),total=len(os.listdir(inputdir))):
         filename = os.path.splitext(pdffile)[0]
         filedirin = os.path.join(inputdir, pdffile)
         filedirout = os.path.join(outputdir, filename + ".txt")
@@ -81,3 +83,9 @@ def pdf_to_txt(inputdir, outputdir, overwrite=False):
                 failed += 1
     print("Done converting to plain text!!!")
     print("Total converted files:", converted, "Failed to converted:", failed)
+
+
+if __name__ == '__main__':
+    in_dir=os.path.join(os.getcwd(),"in")
+    out_dir = os.path.join(os.getcwd(), "out")
+    pdf_to_txt(in_dir,out_dir,overwrite=True)
