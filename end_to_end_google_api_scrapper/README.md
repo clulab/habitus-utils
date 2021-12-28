@@ -10,7 +10,7 @@ This repository contains:
 
 ##Installation
 
-
+./runme.sh
 ##Requirements
 
 
@@ -19,4 +19,15 @@ This repository contains:
 python3 get_country_similarity.py --
 
 ```
-##Tables of Program Flags
+# Update on Dec 2021: 
+
+Mithun dissected out the code which bulk downloads pdf files for a 
+given google query. To run it do:
+
+```python scrape_google_any_query.py```
+
+Notes: 
+- Google has a daily limit of 100 free queries. Keep that in mind/comment the query part when debugging
+- pass --overwrite if you want to run query for the second time.  
+
+
