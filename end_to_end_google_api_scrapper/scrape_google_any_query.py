@@ -28,7 +28,7 @@ parser.add_argument("--pdf_storage", help="Location on the device to store pdfs 
 					default="dowloaded_pdfs")
 parser.add_argument("--query",
 					help="what query you wanna use for google crawling",
-					default="Senegal rice plant* OR sowing OR planted in OR sowed in OR planted on OR sowed on OR plants  Or sows on OR date OR time OR start january OR february OR march OR april OR may OR june OR july OR august OR september OR october OR november OR december before:2020-03-01 -cooking -dish -recipe -Condoleezza")
+					default="Senegal rice think OR believe OR explain OR doubt OR trust OR likely OR possible OR certain -recipe -dish -Condoleezza before:2020-03-01 ")
 parser.add_argument("--google_developer_key", help="The Google API developer key which can be created as instructed in README.md", 
 					default="AIzaSyCAzULm7A5v3-702_TQ1xwF66J2mCa2xxA")
 parser.add_argument("--custom_search_id", help="The Google custom search ID, which can be created as instructed in README.md",
@@ -69,7 +69,7 @@ def get_pdf_links_related_to_target_and_similar_countries(query):
 	# For all query to Google API, they only return as most 100 results even if the hit results are much more than 100.
 	# These 100 hit results will be placed on 10 separate pages. With ``start`` from 1 to 101.
 	# There are we create another outer loop to iterate ``start``
-	for i in range(1, 100, 10):
+	for i in range(101, 200, 10):
 				# we do not need to define type:pdf and language: english here. It will be defined when call
 				# request to Google API. Also, here we do not have to use special format that Google API use
 				# human-readable text will be automatically converted by request function implemented by the API
