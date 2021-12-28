@@ -10,7 +10,7 @@
 		4. To be continued
 	Usage: python3 get_country_similarity.py [Plus arguments as needed, please follow the README.md]
 '''
-
+from tqdm import tqdm
 from googleapiclient.discovery import build
 from download_pdflinks_google_crawled import download_pdfs_from_links
 from pdf_to_txt import pdf_to_txt
@@ -19,7 +19,6 @@ import argparse
 import os
 import shutil
 import sys
-
 
 # Initialize Python argument parser.
 parser = argparse.ArgumentParser()
@@ -69,7 +68,7 @@ def get_pdf_links_related_to_target_and_similar_countries(query):
 	# For all query to Google API, they only return as most 100 results even if the hit results are much more than 100.
 	# These 100 hit results will be placed on 10 separate pages. With ``start`` from 1 to 101.
 	# There are we create another outer loop to iterate ``start``
-	for i in range(1, 200, 10):
+	for i in tqdm(range(1, 100, 10),total=100):
 				# we do not need to define type:pdf and language: english here. It will be defined when call
 				# request to Google API. Also, here we do not have to use special format that Google API use
 				# human-readable text will be automatically converted by request function implemented by the API
