@@ -15,7 +15,7 @@ import math
 from tqdm import tqdm
 
 
-class Question_Encoder ():
+class Question_Encoder:
     """
     Irrespective of question type, self.text is the text of the question
     and self.qtype is either 'single' (for a single-answer question) or
@@ -42,95 +42,101 @@ class Question_Encoder ():
     meaning that the columns A6_1 and A6_2 contain the yes/no answers to 
     whether one grows rice and wheat, respectively.  
     """
-    
+
     def __init__(self, **kwargs):
-        for k,v in kwargs.items():
-            setattr(self,k,v)         
-            
-        self.df_name = self.country+'_'+self.survey  # the name, not the actual df
-        
-        
-    def make_columns (self):
+        for k, v in kwargs.items():
+            setattr(self, k, v)
+
+        self.df_name = self.country + "_" + self.survey  # the name, not the actual df
+
+    def make_columns(self):
         qdf = pd.DataFrame()
-        if self.qtype == 'single':
+        if self.qtype == "single":
             col = self.df[self.df_name].get(self.label)
             if col is not None:
-                qdf[self.label]  =  col
+                qdf[self.label] = col
             else:
-                print (f"{self.df_name}.{self.label} does not exist")
+                print(f"{self.df_name}.{self.label} does not exist")
         else:
-            for k,v in self.column_dict.items():
-                col = self.df[self.df_name].get(self.label+'_'+str(v))
+            for k, v in self.column_dict.items():
+                col = self.df[self.df_name].get(self.label + "_" + str(v))
                 if col is not None:
                     qdf[k] = col
                 else:
-                    print (f"{self.df_name}.{self.label+'_'+str(v)} does not exist")
-        self.columns = qdf.to_json(orient='split')          
-    
+                    print(f"{self.df_name}.{self.label+'_'+str(v)} does not exist")
+        self.columns = qdf.to_json(orient="split")
+
     def encode(self):
-        del self.__dict__['df']
+        del self.__dict__["df"]
         return json.dumps(self.__dict__)
-    
 
 
-class Question_Decoder (SimpleNamespace):
-    def __init__(self,json_string):
+class Question_Decoder(SimpleNamespace):
+    def __init__(self, json_string):
         self.__dict__.update(json.loads(json_string))
-        self.df = pd.read_json(self.columns,orient='split', convert_axes = False)
+        self.df = pd.read_json(self.columns, orient="split", convert_axes=False)
         # the convert_axes = False argument seems to protect against a bizarre
         # behavior where pd.read_json reads some strings as datetimes, though they are not.
         del self.columns
-            
 
-class CGAP_Encoded ():
+
+class CGAP_Encoded:
     def __init__(self):
         self.jstrings = []
-    
-    def add_encoded (self,encoded):
-        self.jstrings.append(encoded)
-    
-    def write (self, file): 
-        f = open(file, 'w') if os.path.isfile(file) else open(file, "x")
-        print(*self.jstrings, sep = '\r', file = f)
-        f.close
-        
 
-class CGAP_Decoded (SimpleNamespace):
+    def add_encoded(self, encoded):
+        self.jstrings.append(encoded)
+
+    def write(self, file):
+        f = open(file, "w") if os.path.isfile(file) else open(file, "x")
+        print(*self.jstrings, sep="\r", file=f)
+        f.close
+
+
+class CGAP_Decoded(SimpleNamespace):
     def __init__(self):
         pass
-        
-    def decode (self, jstring):
+
+    def decode(self, jstring):
         # this decodes a string and adds it to self.__dict__ with a key
         # made from the country string and question label
         d = Question_Decoder(jstring)
-        self.__dict__.update({d.country+'_'+d.label : d})
+        self.__dict__.update({d.country + "_" + d.label: d})
         return d
-           
-    def read_and_decode (self, file):
-        with open(file,'r') as f:
+
+    def read_and_decode(self, file):
+        with open(file, "r") as f:
             for jstring in f.readlines():
                 self.decode(jstring)
-    
-    def by_name (self,name):
+
+    def by_name(self, name):
         # convenience function to let us construct the name from parts
         # e.g., [self.by_name(country+'_H6') for country in ['bgd','uga']]
         return self.__dict__.get(name)
-    
-    def df (self, name):
-        # convenience function to return the df associated with given a 
+
+    def df(self, name):
+        # convenience function to return the df associated with given a
         # country_label such as  moz_A1
         return self.by_name(name).df
-    
-    def add_col (self, country, label, df, qtype = 'single', text = None, answers = None):
-        df = pd.DataFrame(df,columns = [label])
+
+    def add_col(self, country, label, df, qtype="single", text=None, answers=None):
+        df = pd.DataFrame(df, columns=[label])
         self.__dict__.update(
-            {country+'_'+label : 
-              SimpleNamespace(
-                  qtype = qtype, text = text, answer = answers,
-                  country = country, label = label, df = df) 
-              })
-            
-    def describe (self, label, country = 'bgd', display = True):
+            {
+                country
+                + "_"
+                + label: SimpleNamespace(
+                    qtype=qtype,
+                    text=text,
+                    answer=answers,
+                    country=country,
+                    label=label,
+                    df=df,
+                )
+            }
+        )
+
+    def describe(self, label, country="bgd", display=True):
         """ Given a label such as 'A5', this returns a tuple of f-strings that
         describe the associated data object. If a country is specified, this 
         describes the data associated with the label for that country.  This can
@@ -138,138 +144,166 @@ class CGAP_Decoded (SimpleNamespace):
         questions, respectively) are different for different across countries.
         For a non-verbose description it will often be sufficient to default
         to 'bgd' as the country."""
-        obj = self.__dict__.get(country+'_'+label)
+        obj = self.__dict__.get(country + "_" + label)
         if obj is None:
-            print (f"{country+'_'+label} does not exist")
+            print(f"{country+'_'+label} does not exist")
             return None
-        description = [f"{k} : {obj.__dict__.get(k)}\n" for k in
-                       ['label','text','qtype','survey','answers']]
-        
-        cd = obj.__dict__.get('column_dict') 
+        description = [
+            f"{k} : {obj.__dict__.get(k)}\n"
+            for k in ["label", "text", "qtype", "survey", "answers"]
+        ]
+
+        cd = obj.__dict__.get("column_dict")
         if cd is not None:
             description.append(f"column names : {list(cd.keys())}\n")
-        
-        if display: 
+
+        if display:
             print(*description)
         else:
-            return "\n\n"+"".join(description)
-        
-         
-    def col (self,country,label,*column):  
+            return "\n\n" + "".join(description)
+
+    def col(self, country, label, *column):
         """ Returns a pd series (not a df) for the country and label.  If label denotes
-        a multi-answer question, a column is expected; for example, col('moz','A5,'Rice') """                                                                  
-        obj = self.__dict__.get(country+'_'+label)
+        a multi-answer question, a column is expected; for example, col('moz','A5,'Rice') """
+        obj = self.__dict__.get(country + "_" + label)
         if obj is None:
-            print (f"{country+'_'+label} does not exist")
+            print(f"{country+'_'+label} does not exist")
             return None
-        if obj.qtype == 'single':
+        if obj.qtype == "single":
             if column != ():
-                print (f"{label} is a single-answer question; ignoring {column[0]}")
+                print(f"{label} is a single-answer question; ignoring {column[0]}")
             return obj.df.get(label)
-        if obj.qtype == 'multi': 
+        if obj.qtype == "multi":
             if column != ():
                 c = obj.df.get(column[0])
                 if c is None:
-                    print (f"{country+'_'+label+'.'+column[0]} does not exist")
+                    print(f"{country+'_'+label+'.'+column[0]} does not exist")
                 return c
             else:
-                print (f"\n{country+'_'+label} is a multi-answer question; please specify an answer column.")
-                print (f"\nOptions are {list(obj.column_dict.keys())}")
-                
-        
-    def col_from_countries (self, var, countries):
+                print(
+                    f"\n{country+'_'+label} is a multi-answer question; please specify an answer column."
+                )
+                print(f"\nOptions are {list(obj.column_dict.keys())}")
+
+    def col_from_countries(self, var, countries):
         """ var is either a label, alone, if the label denotes a single-answer question, 
         or a (label, column_name) tuple if the label denotes a multi-answer question. 
         Either way, this function returns a df of exactly one column, which is the 
         append of this column for all the countries in the order specified."""
-        if type(var) in [tuple,list]:
-            return pd.DataFrame(pd.concat([self.col(country, var[0],var[1]) for country in countries],axis=0))
+        if type(var) in [tuple, list]:
+            return pd.DataFrame(
+                pd.concat(
+                    [self.col(country, var[0], var[1]) for country in countries], axis=0
+                )
+            )
         else:
-            return pd.DataFrame(pd.concat([self.col(country, var) for country in countries],axis=0))
+            return pd.DataFrame(
+                pd.concat([self.col(country, var) for country in countries], axis=0)
+            )
 
-    def cols_from_countries (self, *vars, countries):
+    def cols_from_countries(self, *vars, countries):
         df = pd.DataFrame()
-        df=df.join([self.col_from_countries(var, countries) for var in vars],how='outer')
+        df = df.join(
+            [self.col_from_countries(var, countries) for var in vars], how="outer"
+        )
         return df
 
-    #for all countries concatenate answers for all single answer queries
+    # for all countries concatenate answers for all single answer queries
     def concat_all_single_answer_qns(self, qns_to_avoid):
-        df=None
-        for k,v in tqdm(self.__dict__.items(),total=len(self.__dict__.items()),desc="single_ans") :
-            if v.qtype=='single':
-                label=v.label
-                if (label not in qns_to_avoid):
-                    v_df_scaled=scale_min_max(v.df[label])
+        df = None
+        for k, v in tqdm(
+            self.__dict__.items(), total=len(self.__dict__.items()), desc="single_ans"
+        ):
+            if v.qtype == "single":
+                label = v.label
+                if label not in qns_to_avoid:
+                    v_df_scaled = scale_min_max(v.df[label])
                     df = pd.concat([df, v_df_scaled], axis=1)
         assert df is not None
         return df
 
     # for all countries concatenate answers for all single answer queries
     def concat_all_multiple_answer_qns(self, qns_to_avoid):
-            df = None
-            for k, v in tqdm(self.__dict__.items(), total=len(self.__dict__.items()), desc="multiple_ans"):
-                if v.qtype == 'multi' or v.qtype == "multiple":
-                    label = v.label
-                    if (label not in qns_to_avoid):
-                        for sub_qn in (v.df):
-                            v_df_scaled = scale_min_max(v.df[sub_qn])
-                            df = pd.concat([df, v_df_scaled], axis=1)
-            assert df is not None
-            return df
-class Country_Decoded (CGAP_Decoded):
+        df = None
+        for k, v in tqdm(
+            self.__dict__.items(), total=len(self.__dict__.items()), desc="multiple_ans"
+        ):
+            if v.qtype == "multi" or v.qtype == "multiple":
+                label = v.label
+                if label not in qns_to_avoid:
+                    for sub_qn in v.df:
+                        v_df_scaled = scale_min_max(v.df[sub_qn])
+                        df = pd.concat([df, v_df_scaled], axis=1)
+        assert df is not None
+        return df
+
+
+class Country_Decoded(CGAP_Decoded):
     """ This is a country-specific version of CGAP_Decoded. We create one instance per
     country. For now, we do it by first creating an instance of CGAP_Decoded for the
     entire dataset and then extracting a country's records from it. country is one of
     'bgd','cdi','moz','nga','tan' and 'uga'. """
-    
+
     def __init__(self, country, full_dataset):
-        self.__dict__.update({k.split('_')[1]:v
-                              for k,v in full_dataset.__dict__.items() if country in k})
+        self.__dict__.update(
+            {
+                k.split("_")[1]: v
+                for k, v in full_dataset.__dict__.items()
+                if country in k
+            }
+        )
 
-
-    #for any given country, return the list of all available single qn answers
+    # for any given country, return the list of all available single qn answers
     def concat_all_single_answer_qns(self, qns_to_avoid):
-        df=None
-        for k,v in tqdm(self.__dict__.items(),total=len(self.__dict__.items()),desc="single_ans") :
-            if v.qtype=='single':
-                label=v.label
-                if (label not in qns_to_avoid):
-                    if not (type(v.df[label]._values[0])==str):
-                        v_df_scaled=scale_min_max(v.df[label])
+        df = None
+        for k, v in tqdm(
+            self.__dict__.items(), total=len(self.__dict__.items()), desc="single_ans"
+        ):
+            if v.qtype == "single":
+                label = v.label
+                if label not in qns_to_avoid:
+                    if not (type(v.df[label]._values[0]) == str):
+                        v_df_scaled = scale_min_max(v.df[label])
                         df = pd.concat([df, v_df_scaled], axis=1)
         assert df is not None
         return df
 
     # for any given country, return the list of all available single qn answers
     def concat_all_single_answer_qns_to_add(self, qns_to_add):
-            df = None
-            for k, v in tqdm(self.__dict__.items(), total=len(self.__dict__.items()), desc="single_ans"):
-                if v.qtype == 'single':
-                    label = v.label
-                    if (label in qns_to_add):
-                        if not (type(v.df[label]._values[0]) == str):
-                            v_df_scaled = scale_min_max(v.df[label])
-                            df = pd.concat([df, v_df_scaled], axis=1)
-            assert df is not None
-            return df
+        df = None
+        for k, v in tqdm(
+            self.__dict__.items(), total=len(self.__dict__.items()), desc="single_ans"
+        ):
+            if v.qtype == "single":
+                label = v.label
+                if label in qns_to_add:
+                    if not (type(v.df[label]._values[0]) == str):
+                        v_df_scaled = scale_min_max(v.df[label])
+                        df = pd.concat([df, v_df_scaled], axis=1)
+        assert df is not None
+        return df
 
-            # for any given country, return the list of all available single qn answers
+        # for any given country, return the list of all available single qn answers
 
     def concat_all_multiple_answer_qns(self, qns_to_avoid):
         df = None
-        for k, v in tqdm(self.__dict__.items(), total=len(self.__dict__.items()), desc="multiple_ans"):
-            if v.qtype == 'multi' or v.qtype == "multiple":
+        for k, v in tqdm(
+            self.__dict__.items(), total=len(self.__dict__.items()), desc="multiple_ans"
+        ):
+            if v.qtype == "multi" or v.qtype == "multiple":
                 label = v.label
-                if (label not in qns_to_avoid):
+                if label not in qns_to_avoid:
                     # attach the column name as qn_subtpe. eg: A5_Rice
                     new_cols = []
                     for c in v.df.columns:
                         new_col_name = label + "_" + c
                         new_cols.append(new_col_name)
                     v.df.columns = new_cols
-                    for sub_qn in (v.df):
-                        #if not (type(v.df[label]._values[0]) == str):
-                        if isinstance((v.df[sub_qn]._values[0]), (int, float, np.integer)):
+                    for sub_qn in v.df:
+                        # if not (type(v.df[label]._values[0]) == str):
+                        if isinstance(
+                            (v.df[sub_qn]._values[0]), (int, float, np.integer)
+                        ):
                             v_df_scaled = scale_min_max(v.df[sub_qn])
                             df = pd.concat([df, v_df_scaled], axis=1)
         assert df is not None
@@ -278,21 +312,23 @@ class Country_Decoded (CGAP_Decoded):
     # for any given country, return the list of all available multiple qn answers-provided you are given list of qns to add
     def concat_all_multiple_answer_qns_to_add(self, qns_to_add):
         df = None
-        for k, v in tqdm(self.__dict__.items(), total=len(self.__dict__.items()), desc="multiple_ans"):
-            if v.qtype == 'multi' or v.qtype=="multiple":
+        for k, v in tqdm(
+            self.__dict__.items(), total=len(self.__dict__.items()), desc="multiple_ans"
+        ):
+            if v.qtype == "multi" or v.qtype == "multiple":
                 label = v.label
-                if (label in qns_to_add):
+                if label in qns_to_add:
                     # attach the column name as qn_subtpe. eg: A5_Rice
                     new_cols = []
                     for c in v.df.columns:
                         new_col_name = label + "_" + c
                         new_cols.append(new_col_name)
                     v.df.columns = new_cols
-                    for sub_qn in (v.df):
-                        #note: this is a datacleanup issue. needs to be fixed in cgap_json.txt
-                        if isinstance(type(v.df[sub_qn]._values[0]),(int,float, np.integer)):
+                    for sub_qn in v.df:
+                        # note: this is a datacleanup issue. needs to be fixed in cgap_json.txt
+                        if isinstance(
+                            type(v.df[sub_qn]._values[0]), (int, float, np.integer)
+                        ):
                             v_df_scaled = scale_min_max(v.df[sub_qn])
                             df = pd.concat([df, v_df_scaled], axis=1)
         return df
-
-
